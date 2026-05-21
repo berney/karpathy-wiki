@@ -1,5 +1,5 @@
 ---
-name: llm-wiki-twillm
+name: karpathy-wiki
 description: How to set up and operate a twillm wiki — an incremental knowledge base built from ingested sources. The LLM reads your raw documents and maintains structured, interlinked markdown tiddlers in a twillm vault. Use this skill when building wikis from sources, ingesting documents into a twillm vault, maintaining linked tiddlers, querying wiki knowledge, running lint passes, setting up twillm with Docker or npx, or organizing research notes with wikilinks.
 ---
 

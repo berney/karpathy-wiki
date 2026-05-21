@@ -60,7 +60,7 @@ vault/.obsidian/appearance.json
 
 ## Working with an LLM Agent
 
-The skill at `skills/llm-wiki-twillm/` provides conventions for Claude Code: atomic tiddlers, YAML frontmatter, wikilinks, tagging taxonomy. Install it via symlink to `~/.claude/skills/` so it's available across all projects.
+The skill at `skills/karpathy-wiki/` provides conventions for Claude Code: atomic tiddlers, YAML frontmatter, wikilinks, tagging taxonomy. Install it via symlink to `~/.claude/skills/` so it's available across all projects.
 
 ## Tiddler format
 
