@@ -13,4 +13,4 @@ EOF
 EXPOSE 8080
 
 ENTRYPOINT ["/app/cli.js"]
-CMD ["/data/vault"]
+CMD ["--", "--listen", "host=0.0.0.0"]
