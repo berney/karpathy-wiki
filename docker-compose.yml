@@ -6,13 +6,15 @@
 #   docker compose up -d       # start, detached
 #   docker compose down        # stop
 #
-# Exposes http://localhost:8080
-# Vault lives at ./vault/ — twillm-wiki/ is written alongside it.
+# Exposes http://localhost:8082
+# Mounts only vault/ — twillm auto-detects ./vault from its cwd.
+# For a different directory (e.g. docs/wiki/), change the host mount:
+#   - ./docs/wiki:/app/vault:Z
 
 services:
   twillm:
     build: .
     ports:
-      - "8080:8080"
+      - "8082:8080"
     volumes:
-      - .:/data:Z
+      - ./vault:/app/vault:Z
