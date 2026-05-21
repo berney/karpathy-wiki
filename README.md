@@ -1,6 +1,6 @@
 # karpathy-wiki
 
-A TiddlyWiki-based LLM knowledge wiki built with [TWILLM](https://github.com/Jermolene/twillm), inspired by Karpathy's LLM Wiki pattern. The LLM maintains an Obsidian-compatible vault of Markdown files which TiddlyWiki serves live to a browser — edits from the coding agent, manual editing, or the browser itself are all picked up instantly.
+A TiddlyWiki-based LLM knowledge wiki built with [twillm](https://github.com/Jermolene/twillm), inspired by Karpathy's LLM Wiki pattern. The LLM maintains an Obsidian-compatible vault of Markdown files which TiddlyWiki serves live to a browser — edits from the coding agent, manual editing, or the browser itself are all picked up instantly.
 
 ## Quick start
 
@@ -14,8 +14,7 @@ Edit `.md` files in `vault/` (with your LLM agent, editor, or the browser). Chan
 
 ```
 CLAUDE.md              ← Agent instructions for this vault (not served as a wiki page)
-docker-compose.yml     ← Docker setup (optional, for running twillm in a container)
-Dockerfile             ← TWILLM image build
+docker-compose.yml     ← Docker setup (optional, for running twillm from GHCR)
 vault/                 ← The wiki vault — flat directory of tiddler files
   index.md             ← Content catalog (optional; TiddlyWiki live views can replace this)
   *.md                 ← Markdown tiddlers — one concept per file, YAML frontmatter + wikilinks
@@ -26,7 +25,7 @@ skills/                ← Claude skills (llm-wiki-twillm)
 
 ## Running with Docker
 
-The provided `docker-compose.yml` builds a [twillsim image](https://github.com/Jermolene/twillm) from source and serves the vault. It mounts only `vault/` — twillm auto-detects it via its cwd (`./vault`).
+The provided `docker-compose.yml` uses a [twillm image](https://github.com/Jermolene/twillm) from GHCR and serves the vault. It mounts only `vault/` — twillm auto-detects it via its cwd (`./vault`).
 
 ```bash
 docker compose up -d   # start detached
