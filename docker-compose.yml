@@ -1,0 +1,18 @@
+# Run twillm (TiddlyWiki-based wiki viewer) with a local vault.
+# Live-synced: edits to vault/ from any source (LLM agent, browser, manual) are picked up immediately.
+#
+# Usage:
+#   docker compose up          # start, foreground
+#   docker compose up -d       # start, detached
+#   docker compose down        # stop
+#
+# Exposes http://localhost:8080
+# Vault lives at ./vault/ — twillm-wiki/ is written alongside it.
+
+services:
+  twillm:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/data:Z
