@@ -11,12 +11,13 @@
 # For a different directory (e.g. docs/wiki/), change the host mount:
 #   - ./docs/wiki:/app/vault:Z
 # To switch back to building locally, uncomment "build:" and comment out "image:".
+# The build context is twillm/ (where the Dockerfile lives).
 
 services:
   twillm:
     image: ghcr.io/berney/twillm:latest
     # build: twillm                # Uncomment to build locally from ./twillm/Dockerfile
     ports:
-      - "8082:8080"
+      - "8080:8080"
     volumes:
       - ./vault:/app/vault:Z

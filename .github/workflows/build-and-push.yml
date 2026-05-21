@@ -1,0 +1,128 @@
+# Follows guidance of https://docs.github.com/en/actions/publishing-packages/publishing-docker-images
+name: Build and publish Docker image to GHCR
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    if: github.repository == 'berney/karpathy-wiki'
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: berney/twillm
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: 💻 Setup QEMU
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+
+      - name: 🐋 Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Docker Login
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # These tags are always pushed, even if tests fail, so images can be
+      # pulled for debugging. Final tags are only applied after tests pass.
+      - name: Extract build tags for Docker
+        id: meta-sha
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=ref,event=pr
+
+      # Final tags are applied after tests pass via imagetools create.
+      - name: Extract final tags for Docker
+        id: meta
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Build multi-arch and push under an ephemeral test tag.
+      # Final tags are only applied after the healthcheck passes.
+      # Note: the healthcheck runs only the native runner arch (amd64); the
+      # arm64 variant is built but not run in CI.
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: twillm/
+          platforms: |
+            linux/amd64
+            linux/arm64
+          push: true
+          provenance: true
+          sbom: true
+          tags: ${{ steps.meta-sha.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: |
+            index:org.opencontainers.image.description="A TiddlyWiki-based LLM knowledge base"
+            ${{ steps.meta.outputs.annotations }}
+
+      # Run the image by digest (pinned to exactly what was built above) and
+      # wait for the container's healthcheck to report healthy.
+      - name: Test healthcheck
+        run: |
+          docker run -d --name twillm-test \
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
+
+          status="starting"
+          attempts=0
+          while [ "$status" != "healthy" ] && [ "$attempts" -lt 30 ]; do
+            sleep 2
+            status=$(docker inspect --format='{{.State.Health.Status}}' twillm-test 2>/dev/null || echo "starting")
+            echo "Health status: $status (attempt $((attempts + 1))/30)"
+            [ "$status" = "unhealthy" ] && break
+            attempts=$((attempts + 1))
+          done
+
+          if [ "$status" != "healthy" ]; then
+            docker logs twillm-test
+          fi
+          docker rm -f twillm-test
+
+          if [ "$status" != "healthy" ]; then
+            echo "Container failed to become healthy (final status: $status)"
+            exit 1
+          fi
+
+      # imagetools create is a direct registry operation — it adds new tag
+      # pointers to the existing manifest in GHCR without rebuilding or
+      # pulling the image locally. The digest is unchanged.
+      - name: Promote to final tags
+        if: github.event_name != 'pull_request'
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            docker buildx imagetools create \
+              --tag "$tag" \
+              "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}"
+          done <<< "$TAGS"

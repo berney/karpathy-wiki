@@ -1,0 +1,11 @@
+port:
+  tcp:8080:
+    listening: true
+
+addr:
+  tcp://localhost:8080:
+    reachable: true
+
+http:
+  http://127.0.0.1:8080:
+    status: 200
