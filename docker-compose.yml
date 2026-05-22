@@ -7,7 +7,10 @@
 #   docker compose down        # stop
 #
 # Exposes http://localhost:8082 (change to avoid conflicts with other services)
-# Mounts only vault/ — twillm auto-detects ./vault from its cwd.
+# Mounts both vault/ and twillm-wiki/:
+#   - vault/    contains your hand-written tiddlers (what the LLM creates)
+#   - twillm-wiki/ contains generated/derived content from ingest (twillm saves here)
+# twillm auto-detects ./vault from its cwd (/app).
 # For a different directory (e.g. docs/wiki/), change the host mount:
 #   - ./docs/wiki:/app/vault:Z
 # To switch back to building locally, uncomment "build:" and comment out "image:".
@@ -20,3 +23,4 @@ services:
       - "8082:8080"
     volumes:
       - ./vault:/app/vault:Z
+      - ./twillm-wiki:/app/twillm-wiki:Z
