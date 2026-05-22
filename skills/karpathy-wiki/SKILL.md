@@ -44,11 +44,16 @@ project-root/
 
 **Version control:** Three things inside `twillm-wiki/` are transient and must be gitignored — check if a `.gitignore` exists and add these lines if missing:
 ```
+# twillm transient content (recreated automatically)
 twillm-wiki/output/
+# overwritten by materialiseWiki() on every start, even with bind-mount trick
 twillm-wiki/tiddlywiki.info
+# runtime story state — not meaningful to commit
 twillm-wiki/tiddlers/$__StoryList.tid
 ```
-If no `.gitignore` exists, create one at the project root with these three entries. Explain what each entry is for so the user understands why they're ignoring parts of `twillm-wiki/`.
+Use `scripts/gitignore.example` from this skill as the canonical `.gitignore` template. If no `.gitignore` exists, create one at the project root by copying this file. If a `.gitignore` already exists, check whether each of the three entries is present — add only the missing ones.
+
+**Always put comments on their own line, never inline with gitignore entries.** Git will treat the entire line as the pattern, so `twillm-wiki/output/ # comment` would try to ignore a directory named literally `"output/ # comment"`. If you need to explain something, use a standalone `# comment` line above the entry.
 
 `twillm-wiki/tiddlywiki.info` gets overwritten every time twillm starts (by `materialiseWiki()` copying from the template directory), whether or not you use the bind-mount trick to persist plugin edits. Always gitignore it.
 
