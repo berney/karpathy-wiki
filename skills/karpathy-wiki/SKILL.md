@@ -254,6 +254,20 @@ The user creates a `template-wiki/` directory alongside their compose file and p
 
 **Default tiddlywiki.info:** Use `scripts/template-wiki/tiddlywiki.info` from this skill as the starting point when helping users set up a new project. Copy it into the user's `template-wiki/` directory.
 
+**Editing tiddlywiki.info:** Always Read the file first, then detect its existing indentation style (tabs or spaces) from the read output and match it when adding new entries. The skill's default fixture uses tabs, but users may have edited it with spaces — always follow whatever convention is already in their file. For example, to add `"tiddlywiki/katex"`:
+```
+# If the existing lines use tabs (look for ^I or actual tab characters):
+-	"tiddlywiki/dynannotate",
++	"tiddlywiki/dynannotate",
++	"tiddlywiki/katex",
+
+# If the existing lines use spaces:
+-    "tiddlywiki/dynannotate",
++    "tiddlywiki/dynannotate",
++    "tiddlywiki/katex",
+```
+After editing, validate with `jq . < template-wiki/tiddlywiki.info`. If jq fails, report the error to the user — TiddlyWiki may tolerate non-standard JSON (comments, trailing commas, etc.) that jq rejects, so don't assume it's broken. Ask the user if they want you to fix the formatting or leave it as-is.
+
 **Popular TiddlyWiki plugins** (add to `"plugins"` array):
 | Plugin | Use for |
 |---|---|
