@@ -100,6 +100,77 @@ Use double-bracket syntax for all inter-tiddler links:
 
 Always link to existing tiddlers when referencing concepts they cover. Create a new tiddler for a concept if one doesn't exist and it's likely to be referenced again.
 
+### Shadow Tiddlers
+
+**Shadow tiddlers** are built-in defaults from TW5 core and plugins (e.g., `tw5.com-docs` plugin). They are fully retrievable and viewable through the WebServer API at all times — they are not hidden. What changes is which version TW5 renders:
+
+- **When masked:** An ordinary tiddler with the same title wins over the shadow in rendering. `GET /recipes/default/tiddlers/{title}` returns the ordinary version.
+- **When unmasked:** The shadow tiddler is returned by `GET /recipes/default/tiddlers/{title}` — full content, just like any other tiddler.
+
+**WebServer API endpoints for individual tiddlers:**
+
+```bash
+# Get JSON of a specific tiddler (returns ordinary if masked, shadow if unmasked)
+xh get http://localhost:$PORT/recipes/default/tiddlers/{title}
+
+# Get rendered HTML of a tiddler
+xh get http://localhost:$PORT/{title}
+```
+
+**Filter operators for shadow status:**
+
+| Filter | Meaning |
+|---|---|
+| `[all[shadows]]` | All shadow tiddlers from plugins (large, requires `$:/config/Server/AllowAllExternalFilters=yes`). **Selection constructor** — generates new input rather than filtering the existing one. |
+| `[is[tiddler]is[shadow]]` | Ordinary tiddlers that mask a shadow. `is[tiddler]` selects stored items; `is[shadow]` narrows to those also in the shadows set. **Preferred for detection.** |
+| `[[Foo]is[shadow]]` | Title "Foo" has a corresponding shadow tiddler. If an ordinary tiddler "Foo" exists, it returns that (not the shadow). |
+| `[[Foo]is[shadow]!is[tiddler]]` | "Foo" is purely a shadow, no ordinary tiddler masks it. |
+| `[[Foo]!is[shadow]is[tiddler]]` | "Foo" is purely ordinary — no shadow exists with that title. |
+| `[prefix[X]]` | Tiddlers whose title starts with X (C — selection constructor) |
+| `[suffix[X]]` | Tiddlers whose title ends with X (C — selection constructor) |
+
+**Before creating a tiddler, check if the title shadows an existing tiddler.** Use `[[{Title}]is[shadow]]`. Replace `$PORT` with whatever port twillm is running on:
+
+```bash
+# Spot-check a single title before creating (just count)
+xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[MyNewTitle]is[shadow]]' | jq length
+# > 0 → a shadow exists; reconsider the title or ask the user
+# == 0 → no shadow, safe to create
+
+# Check all shadows starting with a prefix (two-step: count first, then titles if needed)
+xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[all[shadows]prefix[WebServer]]' | jq length
+# > 0 → show which ones match:
+xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[all[shadows]prefix[WebServer]]' | jq 'map(.title)'
+```
+
+**Rules:**
+- Use `jq length` for existence checks; use `jq 'map(.title)'` when you need the actual titles. Each avoids parsing large JSON bodies and saves context tokens.
+- Never fetch `[all[shadows]]` (TW5) just for a dry-run — it's large and unnecessary. Use `[all[shadows]prefix[X]]` TW5 filters with `jq length` instead.
+- When adding multiple related tiddlers, use `[all[shadows]prefix[X]]` TW5 filter and pipe to `jq length` to count results first; pipe to `jq 'map(.title)'` only if the count is > 0 to see which shadows you might be masking.
+- If the user explicitly says to create/override a shadow, proceed and note it.
+
+### Fixing Existing Shadow Masks
+
+Vault tiddlers may have been created with titles that match shadow tiddlers. Ask the user whether to fix them or leave them — don't assume all masks need renaming. If the user says to unmask:
+
+1. **Detect:** Use `find_masked_shadows.py` (if available) or the `[is[tiddler]is[shadow]]` filter to find all ordinary tiddlers masking shadows.
+2. **Verify:** Before renaming, confirm via API that each title actually masks a shadow:
+   ```bash
+   xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[{Title}]is[shadow]is[tiddler]]' | jq length
+   # > 0 → it is masking; safe to rename
+   ```
+3. **Rename:** Change the `title:` field in frontmatter and rename the filename. The new title must not already exist — verify with:
+   ```bash
+   xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[{NewTitle}]]' | jq length
+   # == 0 → safe, no conflict
+   ```
+4. **Fix broken links:** After renaming, update all `[[OldTitle]]` wikilinks across vault `.md` files to point to the new title. Use the `[backlinks]` filter to find which tiddlers reference each old title:
+   ```bash
+   xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[backlinks[{OldTitle}]]' | jq 'map(.title)'
+   ```
+
+**Exception:** Deliberate overrides (e.g., custom sidebar content) may intentionally mask shadow tiddlers. Confirm with the user before renaming anything they consider intentional.
+
 ### Tagging Taxonomy
 
 Use these classification tags consistently:
