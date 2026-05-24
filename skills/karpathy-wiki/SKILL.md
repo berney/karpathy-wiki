@@ -96,7 +96,7 @@ The Transformer is an architecture...
 Use double-bracket syntax for all inter-tiddler links:
 
 - Simple: `[[Transformer]]` — renders as the tiddler title
-- With display text: `[[Bahdanau Attention|Bahdanau et al.]]` — renders "Bahdanau et al." but links to the tiddler named "Bahdanau Attention"
+- With display text: `[[Displayed Link Text|Tiddler Title]]` — renders "Displayed Link Text" as clickable, but links to the tiddler named "Tiddler Title". The display text is BEFORE the pipe, the target title is AFTER.
 
 Always link to existing tiddlers when referencing concepts they cover. Create a new tiddler for a concept if one doesn't exist and it's likely to be referenced again.
 
