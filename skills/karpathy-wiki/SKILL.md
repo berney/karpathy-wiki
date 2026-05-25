@@ -141,7 +141,7 @@ xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[all[shadow
 **When an unintentional mask is detected** (a vault tiddler accidentally overriding a shadow):
 1. **Detect:** Use `[is[tiddler]is[shadow]]` filter to find existing masks.
 2. **Ask the user** — don't assume all masks need renaming; some intentional overrides (e.g., custom sidebar content) are deliberate.
-3. **Retitle** each confirmed unintentional mask using the steps in **Retitling Tiddlers** below.
+3. **Retitle** each confirmed unintentional mask using the steps in **Retitling Tiddlers** below — update the frontmatter title, rename the file. Do **not** add an `aliases:` field for the old shadow title.
 
 Never fetch `[all[shadows]]` just for a dry-run — it's large. Use `[all[shadows]prefix[X]]` with `jq length` instead (see Shadow Tiddlers above).
 
@@ -200,8 +200,8 @@ When the user asks a question about the wiki:
 
 When you need to rename a tiddler (e.g., fixing a shadow conflict, improving naming consistency):
 
-1. **Change the frontmatter** `title:` field to the new name.
-2. **Rename the filename** on disk to match.
+1. **Change the `title:` field in the frontmatter** to the new name (must exactly match the new filename).
+2. **Rename the file** on disk to match the new title.
 3. **Fix broken wikilinks:** find all references to the old title and update them:
    ```bash
    xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[backlinks[{OldTitle}]]' | jq 'map(.title)'
@@ -213,6 +213,8 @@ When you need to rename a tiddler (e.g., fixing a shadow conflict, improving nam
 xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[{NewTitle}]]' | jq length
 # == 0 → safe, no conflict
 ```
+
+**When retitling a shadow-masked tiddler,** only change the title and filename. Do **not** add an `aliases:` field for the old name — aliasing masks to their former shadow titles is unnecessary complexity and can cause confusion.
 
 ### Lint
 
