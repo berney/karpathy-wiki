@@ -9,16 +9,6 @@ How to set up and operate a twillm wiki — an incremental, compounding knowledg
 
 Use this skill whenever the user wants to build a wiki from sources, ingest documents into a twillm vault, maintain linked tiddlers, query wiki knowledge, run lint passes, set up twillm with Docker or npx, organize research notes with wikilinks, or has raw sources they want filed into an organized system.
 
-## Intent Detection
-
-The skill detects intent from the user's request:
-- **Wiki operations** (ingest, query, lint, computed views) → primary mode, focus on wiki work
-- **Setup/Run twillm** ("run twillm", "setup docker") → trigger Docker or npx setup flow
-- **No running instance detected** while user asks wiki work → offer to help with setup after completing their request
-- **User explicitly asks** → show both npx and Docker options
-
-If the user has no twillm setup but starts asking about ingestion, briefly remind them at the end: "You might also want to ask me to set up twillm so you can browse the wiki live in a browser."
-
 ## Project Structure
 
 A project has two or three directories depending on setup:
@@ -38,24 +28,9 @@ project-root/
 **Critical paths:**
 - `CLAUDE.md` at the **project root**, outside any vault directory. twillm renders every `.md` inside the vault as a wiki page.
 - Vault tiddlers are in `vault/` by default (see Vault Directory below). The LLM writes both `.md` and `.tid` files there.
-- `twillm-wiki/` is where twillm persists generated and derived content from ingestion — when you ingest a source, the auto-generated tiddlers live here. **Must be bind-mounted in Docker or content is lost on container restart.**
+- `twillm-wiki/` is where twillm persists generated and derived content from ingestion — when you ingest a source, the auto-generated tiddlers live here. Both directories need persistence (bind-mounted in Docker, or locally with npx).
 
-**Vault vs twillm-wiki:** Your hand-written tiddlers go in `vault/`. Twillm's auto-generated output from ingest goes in `twillm-wiki/`. Both need persistence.
-
-**Version control:** Three things inside `twillm-wiki/` are transient and must be gitignored — check if a `.gitignore` exists and add these lines if missing:
-```
-# twillm transient content (recreated automatically)
-twillm-wiki/output/
-# overwritten by materialiseWiki() on every start, even with bind-mount trick
-twillm-wiki/tiddlywiki.info
-# runtime story state — not meaningful to commit
-twillm-wiki/tiddlers/$__StoryList.tid
-```
-Use `scripts/gitignore.example` from this skill as the canonical `.gitignore` template. If no `.gitignore` exists, create one at the project root by copying this file. If a `.gitignore` already exists, check whether each of the three entries is present — add only the missing ones.
-
-**Always put comments on their own line, never inline with gitignore entries.** Git will treat the entire line as the pattern, so `twillm-wiki/output/ # comment` would try to ignore a directory named literally `"output/ # comment"`. If you need to explain something, use a standalone `# comment` line above the entry.
-
-`twillm-wiki/tiddlywiki.info` gets overwritten every time twillm starts (by `materialiseWiki()` copying from the template directory), whether or not you use the bind-mount trick to persist plugin edits. Always gitignore it.
+**Vault vs twillm-wiki:** Your hand-written tiddlers go in `vault/`. Twillm's auto-generated output from ingest goes in `twillm-wiki/`. For project setup, version control, and compose configuration, see [Setup Guide](references/setup.md).
 
 **Core wiki files:** In a minimal vault, just `.md` and `.tid` tiddlers. `index.md` and `log.md` are optional helpers — TiddlyWiki's live views (`.tid` with wikitext filters) can replace the index entirely.
 
@@ -149,27 +124,26 @@ xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[all[shadow
 - When adding multiple related tiddlers, use `[all[shadows]prefix[X]]` TW5 filter and pipe to `jq length` to count results first; pipe to `jq 'map(.title)'` only if the count is > 0 to see which shadows you might be masking.
 - If the user explicitly says to create/override a shadow, proceed and note it.
 
-### Fixing Existing Shadow Masks
+### Detecting & Resolving Shadow Masks
 
-Vault tiddlers may have been created with titles that match shadow tiddlers. Ask the user whether to fix them or leave them — don't assume all masks need renaming. If the user says to unmask:
+Shadow tiddlers are TiddlyWiki's built-in defaults from TW5 core and plugins — they're always present but only render when no ordinary tiddler shares their title. This section covers detection and resolution; the actual retitling steps are in the **Retitling Tiddlers** operation below.
 
-1. **Detect:** Use `find_masked_shadows.py` (if available) or the `[is[tiddler]is[shadow]]` filter to find all ordinary tiddlers masking shadows.
-2. **Verify:** Before renaming, confirm via API that each title actually masks a shadow:
-   ```bash
-   xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[{Title}]is[shadow]is[tiddler]]' | jq length
-   # > 0 → it is masking; safe to rename
-   ```
-3. **Rename:** Change the `title:` field in frontmatter and rename the filename. The new title must not already exist — verify with:
-   ```bash
-   xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[{NewTitle}]]' | jq length
-   # == 0 → safe, no conflict
-   ```
-4. **Fix broken links:** After renaming, update all `[[OldTitle]]` wikilinks across vault `.md` files to point to the new title. Use the `[backlinks]` filter to find which tiddlers reference each old title:
-   ```bash
-   xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[backlinks[{OldTitle}]]' | jq 'map(.title)'
-   ```
+**Before creating a new tiddler**, check if the chosen title already shadows something:
+```bash
+# Does this title shadow anything? (count only)
+xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[MyNewTitle]is[shadow]]' | jq length
+# > 0 → shadow exists; reconsider or ask if user wants to override
 
-**Exception:** Deliberate overrides (e.g., custom sidebar content) may intentionally mask shadow tiddlers. Confirm with the user before renaming anything they consider intentional.
+# List all matching shadows before creating
+xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[all[shadows]prefix[WebServer]]' | jq 'map(.title)'
+```
+
+**When an unintentional mask is detected** (a vault tiddler accidentally overriding a shadow):
+1. **Detect:** Use `[is[tiddler]is[shadow]]` filter to find existing masks.
+2. **Ask the user** — don't assume all masks need renaming; some intentional overrides (e.g., custom sidebar content) are deliberate.
+3. **Retitle** each confirmed unintentional mask using the steps in **Retitling Tiddlers** below.
+
+Never fetch `[all[shadows]]` just for a dry-run — it's large. Use `[all[shadows]prefix[X]]` with `jq length` instead (see Shadow Tiddlers above).
 
 ### Tagging Taxonomy
 
@@ -222,6 +196,24 @@ When the user asks a question about the wiki:
 3. **Synthesize an answer** citing specific tiddlers (use `[[Tiddler Name]]` links so the user can click through).
 4. **File useful discoveries.** If the query reveals a new insight, comparison, or connection worth keeping, create a new tiddler for it and update the index.
 
+### Retitling Tiddlers
+
+When you need to rename a tiddler (e.g., fixing a shadow conflict, improving naming consistency):
+
+1. **Change the frontmatter** `title:` field to the new name.
+2. **Rename the filename** on disk to match.
+3. **Fix broken wikilinks:** find all references to the old title and update them:
+   ```bash
+   xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[backlinks[{OldTitle}]]' | jq 'map(.title)'
+   ```
+   Update every `[[OldTitle]]` in those files to point to the new title.
+
+**Before retitling,** check that no tiddler already has the target name:
+```bash
+xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[{NewTitle}]]' | jq length
+# == 0 → safe, no conflict
+```
+
 ### Lint
 
 Periodically, health-check the wiki:
@@ -251,132 +243,19 @@ Useful computed views include tag listings (`<<list-links filter:"[tag[X]]">>`),
 
 ## Running twillm
 
-twillm can be run directly via `npx` (quick, no dependencies) or via Docker (isolated, reproducible).
+Quick start via npx (no dependencies): `npx github:Jermolene/twillm` — auto-detects `vault/`, `notes/`, `content/`, or `.obsidian/` cwd, starts on port 8080. For non-standard vault paths: `npx github:Jermolene/twillm docs/wiki`.
 
-### npx (quick start)
+For Docker setup (isolated, reproducible) — compose detection, vault mounting, tiddlywiki.info persistence, plugin management, or checking an existing deployment — see [Setup Guide](references/setup.md).
 
-```bash
-cd /path/to/project
-npx github:Jermolene/twillm
-```
+## Intent Detection
 
-This auto-detects a vault directory (`vault/`, `notes/`, `content/`, or `.obsidian/` cwd), materialises the twillm working directory, and starts the server on http://localhost:8080. For non-standard paths, pass an argument: `npx github:Jermolene/twillm docs/wiki`.
+The skill detects intent from the user's request:
+- **Init a new wiki** ("set up", "initialize", "create", "start") → do BOTH Docker compose setup AND `.gitignore` configuration. Only skip the compose file if the user explicitly mentions npx (in which case still configure gitignore unless they decline version control).
+- **Check existing setup** ("check my docker", "verify", "upgrade") → check BOTH Docker compose AND `.gitignore` configuration. Report what's present and what's missing.
+- **Wiki operations** (ingest, query, lint, computed views) → primary mode, focus on wiki work. If no running instance is detected, briefly mention at the end that they might want to set up twillm.
+- **Setup/Run twillm** ("run twillm", "setup docker") → trigger Docker compose flow; only use npx if the user explicitly mentions it.
 
-### Docker Setup
-
-If the user asks to set up twillm with Docker, create a compose configuration that runs the twillm container and mounts their vault directory. This section activates **only when explicitly asked** — it is not part of the core wiki workflow.
-
-#### Compose detection strategy
-
-When setting up Docker:
-
-1. **Check for existing compose files:** Read `docker-compose.yml`, `docker-compose.yaml`, `compose.yml`, `compose.yaml` if they exist.
-2. **For small files (< 100 lines):** Read the file directly, look for conflicts (existing service named `twillm`/`wiki`/`docs`, port conflicts).
-3. **For large files:** Use `docker compose config --services` and `docker compose config --profiles` to list services without loading the full file into context. Ask the user if they want you to modify this file or create a separate one.
-4. **No existing compose or user prefers fresh setup:** Create a new `docker-compose.yml`.
-
-#### Port detection strategy
-
-When choosing a port for the twillm container:
-
-1. Check common ports (8080, 8082, 9090, 3000).
-2. Check existing compose files for exposed ports.
-3. If still unclear, ask the user or offer 8082 as default and note it's configurable.
-
-#### Service naming
-
-The twillm service can be named `twillm`, `wiki`, or `docs` — use a name that fits the project context. Check for conflicts with existing services using the detection strategy above.
-
-#### Image vs build
-
-Use the published image (`image: ghcr.io/berney/twillm:latest`). For custom builds (e.g., testing a fork), uncomment `build:` in the compose file and point it at the twillm/ context.
-
-#### Vault mounting
-
-Mount both directories required by twillm. The vault holds your hand-written tiddlers; `twillm-wiki` holds generated content from ingest — both persist across restarts:
-
-```yaml
-volumes:
-  - ./vault:/app/vault:Z          # hand-written tiddlers
-  - ./twillm-wiki:/app/twillm-wiki:Z   # generated/derived content from ingest
-```
-
-For non-standard vault names:
-
-```yaml
-volumes:
-  - ./docs/wiki:/app/vault:Z           # SELinux relabel for Linux hosts
-  - ./docs/twillm-wiki:/app/twillm-wiki:Z
-```
-
-The user can customize the host mount to map any directory. Document this in the compose file comments.
-
-#### Persisting tiddlywiki.info edits
-
-`tiddlywiki.info` is the TiddlyWiki configuration file loaded on startup — it controls which plugins and themes are active. The `tiddlywiki.info` inside `twillm-wiki/` gets overwritten every time twillm starts because `materialiseWiki()` in twillm's cli.js unconditionally copies all files from `template-wiki/` into `twillm-wiki/`. There is no existence guard.
-
-This means any plugin additions to `twillm-wiki/tiddlywiki.info` are lost on container restart. To persist edits, bind-mount a custom `tiddlywiki.info` over the template path:
-
-```yaml
-services:
-  twillm:
-    volumes:
-      - ./vault:/app/vault:Z
-      - ./twillm-wiki:/app/twillm-wiki:Z
-      - ./template-wiki/tiddlywiki.info:/app/template-wiki/tiddlywiki.info:Z
-```
-
-The user creates a `template-wiki/` directory alongside their compose file and puts their customized `tiddlywiki.info` there. The bind mount shadows the template file inside the container so materialiseWiki has nothing to overwrite.
-
-**Default tiddlywiki.info:** Use `scripts/template-wiki/tiddlywiki.info` from this skill as the starting point when helping users set up a new project. Copy it into the user's `template-wiki/` directory.
-
-**Editing tiddlywiki.info:** Always Read the file first, then detect its existing indentation style (tabs or spaces) from the read output and match it when adding new entries. The skill's default fixture uses tabs, but users may have edited it with spaces — always follow whatever convention is already in their file. For example, to add `"tiddlywiki/katex"`:
-```
-# If the existing lines use tabs (look for ^I or actual tab characters):
--	"tiddlywiki/dynannotate",
-+	"tiddlywiki/dynannotate",
-+	"tiddlywiki/katex",
-
-# If the existing lines use spaces:
--    "tiddlywiki/dynannotate",
-+    "tiddlywiki/dynannotate",
-+    "tiddlywiki/katex",
-```
-After editing, validate with `jq . < template-wiki/tiddlywiki.info`. If jq fails, report the error to the user — TiddlyWiki may tolerate non-standard JSON (comments, trailing commas, etc.) that jq rejects, so don't assume it's broken. Ask the user if they want you to fix the formatting or leave it as-is.
-
-**Popular TiddlyWiki plugins** (add to `"plugins"` array):
-| Plugin | Use for |
-|---|---|
-| `tiddlywiki/highlight` | Syntax highlighting for code blocks via highlight.js |
-| `tiddlywiki/katex` | Mathematical typesetting with KaTeX |
-| `tiddlywiki/railroad` | Railroad diagrams for grammar/IR visualizations |
-| `tiddlywiki/tw5.com-docs` | Official TiddlyWiki 5 documentation as a reference wiki |
-| `orange/mermaid-tw5` | Mermaid diagrams (flowcharts, sequence diagrams, etc.) |
-
-**Themes** can also be added to the `"themes"` array. Default: `[vanilla, snowwhite]`.
-
-#### Validate syntax
-
-Always run `docker compose config` **before** making changes to verify the existing file is valid. If it fails, tell the user and ask what to do rather than guessing fixes.
-
-After making changes, run `docker compose config` again before telling the user they're done. A broken compose file can silently break other services in the project — don't risk leaving it in a bad state.
-
-#### Upgrade existing setup
-
-When the user asks to "check" or "upgrade" their docker-compose (e.g., "check my docker setup", "upgrade my docker setup"), check each item independently by pattern-matching against the user's compose file — do NOT try to diff line-by-line against the fixture. The fixture (`scripts/docker-compose.example.yml`) is for reference only; use its volume mount strings as the known-good values when a mount is missing:
-
-1. **Find the compose file:** Check for `docker-compose.yml`, `docker-compose.yaml`, `compose.yml`, `compose.yaml`.
-2. **Read it** (small files directly; large files use `docker compose config --services`).
-3. **Check each item independently** by looking for specific volume mount patterns in the user's file:
-   - **Vault mount present** — grep for a line matching `./vault:/app/vault:Z` or a non-standard path (e.g. `./docs/wiki:/app/vault:Z`)
-   - **twillm-wiki mount present** — grep for `./twillm-wiki:/app/twillm-wiki:Z`. If missing, this is critical: generated content from ingest is lost on container restart.
-   - **tiddlywiki.info bind mount** (optional but recommended) — if the user wants to add TiddlyWiki plugins, they need `./template-wiki/tiddlywiki.info:/app/template-wiki/tiddlywiki.info:Z`. Suggest this proactively if not present.
-   - **Port binding** — confirm the host port matches what's already in use (don't "fix" a deliberate port change)
-   - **:Z SELinux label** — present for Linux hosts; note if absent on systems where it's needed
-4. **Propose changes.** Show the user exactly what's missing and ask before modifying. For example: "Your compose file is missing the `twillm-wiki` volume mount — without it, all generated content from ingestion will be lost when the container restarts. Want me to add it?" Do not try to copy lines from the fixture into the user's file; always write complete, valid volume mount entries.
-5. **Validate after changes:** Run `docker compose config` to confirm validity.
-
-If the user's setup has other services or a custom structure, preserve their configuration and only add what's missing. Do not suggest removing or modifying existing services or volumes that aren't part of twillm.
+If the user has no twillm setup but starts asking about ingestion, briefly remind them at the end: "You might also want to ask me to set up twillm so you can browse the wiki live in a browser."
 
 ## Tips
 
