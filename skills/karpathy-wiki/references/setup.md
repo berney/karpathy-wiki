@@ -2,6 +2,14 @@
 
 When initializing or checking a twillm wiki project, handle both the runtime setup (Docker compose or npx) AND version control setup (`.gitignore`). The gitignore step is always required unless the user explicitly declines.
 
+## Vault Directory Discovery
+
+twillm auto-detects vault directories by name: **vault/**, **notes/**, or **content/**. It also treats the current directory as a vault if `.obsidian/` is present. For any other path (e.g. `docs/wiki/`), an explicit argument must be passed to twillm.
+
+When the user mentions a vault that isn't one of the auto-detected names, use twillm with an explicit path argument: `twillm docs/wiki`.
+
+For Docker setups, mount the chosen directory to `/app/vault` in the container — twillm always looks for `./vault` from its working directory. The user can customize this mapping (e.g. `./docs:/app/vault`).
+
 ## Gitignore Rules
 
 Two things inside `twillm-wiki/` are transient and must be gitignored — check if a `.gitignore` exists at the project root and add these lines if missing:
