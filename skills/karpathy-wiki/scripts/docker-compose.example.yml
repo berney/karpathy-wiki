@@ -10,8 +10,6 @@
 # Mounts both vault/ and twillm-wiki/:
 #   - vault/    contains your hand-written tiddlers (what the LLM creates)
 #   - twillm-wiki/ contains generated/derived content from ingest (twillm saves here)
-# For plugin persistence, also mount a custom tiddlywiki.info:
-#   - ./template-wiki/tiddlywiki.info:/app/template-wiki/tiddlywiki.info:Z
 # twillm auto-detects ./vault from its cwd (/app).
 # For a different directory (e.g. docs/wiki/), change the host mount:
 #   - ./docs/wiki:/app/vault:Z
@@ -23,9 +21,9 @@ services:
     image: ghcr.io/berney/twillm:latest
     # build: twillm                # Uncomment to build locally from ./twillm/Dockerfile
     ports:
-      - "8080:8080"
+      - "localhost:8080:8080"
     volumes:
       - ./vault:/app/vault:Z
       - ./twillm-wiki:/app/twillm-wiki:Z
-      # Uncomment below to persist tiddlywiki.info edits (e.g. plugin additions):
-      # - ./template-wiki/tiddlywiki.info:/app/template-wiki/tiddlywiki.info:Z
+      # empty template, to stop twilm clobbering
+      - ./template-wiki/:/app/template-wiki/:ro,Z

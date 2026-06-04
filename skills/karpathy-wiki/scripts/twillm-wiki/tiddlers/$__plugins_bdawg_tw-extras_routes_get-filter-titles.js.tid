@@ -1,0 +1,27 @@
+created: 20260524122007582
+modified: 20260524123457749
+module-type: route
+plugin-type: plugin
+tags: 
+title: $:/plugins/bdawg/tw-extras/routes/get-filter-titles.js
+type: application/javascript
+
+"use strict";
+
+exports.methods = ["GET"];
+exports.path = /^\/recipes\/default\/filter-titles.json$/;
+exports.info = {priority: 100};
+
+exports.handler = function(request,response,state) {
+	var filter = state.queryParameters.filter || "";
+	try {
+		var titles = state.wiki.filterTiddlers(filter);
+		if (Array.isArray(titles) && typeof titles[0] === "string" && /^Filter error:/.test(titles[0])) {
+			state.sendResponse(400, {"Content-Type": "application/json"}, JSON.stringify({error: titles[0]}), "utf8");
+			return;
+		}
+		state.sendResponse(200, {"Content-Type": "application/json"}, JSON.stringify(titles), "utf8");
+	} catch(e) {
+		state.sendResponse(400, {"Content-Type": "application/json"}, JSON.stringify({error: e.message || String(e)}), "utf8");
+	}
+};

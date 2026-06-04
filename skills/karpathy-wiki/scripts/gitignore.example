@@ -1,6 +1,4 @@
 # twillm transient content (recreated automatically)
 twillm-wiki/output/
-# overwritten by materialiseWiki() on every start, even with bind-mount trick
-twillm-wiki/tiddlywiki.info
 # runtime story state — not meaningful to commit
 twillm-wiki/tiddlers/$__StoryList.tid

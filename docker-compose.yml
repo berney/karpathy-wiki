@@ -14,6 +14,7 @@
 # For a different directory (e.g. docs/wiki/), change the host mount:
 #   - ./docs/wiki:/app/vault:Z
 # To switch back to building locally, uncomment "build:" and comment out "image:".
+# The build context is twillm/ (where the Dockerfile lives).
 
 services:
   twillm:
@@ -24,3 +25,5 @@ services:
     volumes:
       - ./vault:/app/vault:Z
       - ./twillm-wiki:/app/twillm-wiki:Z
+      # empty template, to stop twilm clobbering
+      - ./template-wiki/:/app/template-wiki/:ro,Z

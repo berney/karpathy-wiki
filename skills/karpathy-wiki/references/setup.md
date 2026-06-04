@@ -4,22 +4,20 @@ When initializing or checking a twillm wiki project, handle both the runtime set
 
 ## Gitignore Rules
 
-Three things inside `twillm-wiki/` are transient and must be gitignored — check if a `.gitignore` exists at the project root and add these lines if missing:
+Two things inside `twillm-wiki/` are transient and must be gitignored — check if a `.gitignore` exists at the project root and add these lines if missing:
 
 ```
 # twillm transient content (recreated automatically)
 twillm-wiki/output/
-# overwritten by materialiseWiki() on every start, even with bind-mount trick
-twillm-wiki/tiddlywiki.info
 # runtime story state — not meaningful to commit
 twillm-wiki/tiddlers/$__StoryList.tid
 ```
 
-Use `scripts/gitignore.example` from this skill as the canonical `.gitignore` template. If no `.gitignore` exists, create one at the project root by copying this file. If a `.gitignore` already exists, check whether each of the three entries is present — add only the missing ones.
+Use `scripts/gitignore.example` from this skill as the canonical `.gitignore` template. If no `.gitignore` exists, create one at the project root by copying this file. If a `.gitignore` already exists, check whether each of the two entries is present — add only the missing ones.
 
 **Always put comments on their own line, never inline with gitignore entries.** Git will treat the entire line as the pattern, so `twillm-wiki/output/ # comment` would try to ignore a directory named literally `"output/ # comment"`. If you need to explain something, use a standalone `# comment` line above the entry.
 
-`twillm-wiki/tiddlywiki.info` gets overwritten every time twillm starts (by `materialiseWiki()` copying from the template directory), whether or not you use the bind-mount trick to persist plugin edits. Always gitignore it.
+`twillm-wiki/tiddlywiki.info` is normally overwritten on every start by `materialiseWiki()`, which is why it was removed from the gitignore above — with the empty-template pattern (template-wiki/ kept free of files), there's nothing to copy so no clobbering occurs.
 
 ## Docker Setup
 
@@ -58,6 +56,7 @@ Mount both directories required by twillm. The vault holds your hand-written tid
 volumes:
   - ./vault:/app/vault:Z          # hand-written tiddlers
   - ./twillm-wiki:/app/twillm-wiki:Z   # generated/derived content from ingest
+  - ./template-wiki/:/app/template-wiki/:ro,Z   # empty dir, read-only, prevents materialiseWiki() clobbering
 ```
 
 For non-standard vault names:
@@ -66,15 +65,18 @@ For non-standard vault names:
 volumes:
   - ./docs/wiki:/app/vault:Z           # SELinux relabel for Linux hosts
   - ./docs/twillm-wiki:/app/twillm-wiki:Z
+  - ./template-wiki/:/app/template-wiki/:ro,Z
 ```
 
-The user can customize the host mount to map any directory. Document this in the compose file comments.
+The user can customize the host mount to map any directory. Document this in the compose file comments. The `template-wiki/` directory should be kept empty (`.gitkeep` only) so that materialiseWiki() has no files to copy into twillm-wiki/.
 
-### Persisting tiddlywiki.info Edits
+### Empty Template Pattern (prevents clobbering)
 
 `twillm-wiki/tiddlywiki.info` is the TiddlyWiki configuration file loaded on startup — it controls which plugins and themes are active. The `tiddlywiki.info` inside `twillm-wiki/` gets overwritten every time twillm starts because `materialiseWiki()` in twillm's cli.js unconditionally copies all files from `template-wiki/` into `twillm-wiki/`. There is no existence guard.
 
-This means any plugin additions to `twillm-wiki/tiddlywiki.info` are lost on container restart. To persist edits, bind-mount a custom `tiddlywiki.info` over the template path:
+The standard approach to prevent clobbering: keep `template-wiki/` intentionally empty and pre-populate `twillm-wiki/` with a default `tiddlywiki.info`. Since template-wiki/ has no files, there's nothing for materialiseWiki() to copy, so twillm-wiki/ is left alone.
+
+For the Docker compose file, bind-mount an empty template-wiki/:
 
 ```yaml
 services:
@@ -82,14 +84,20 @@ services:
     volumes:
       - ./vault:/app/vault:Z
       - ./twillm-wiki:/app/twillm-wiki:Z
-      - ./template-wiki/tiddlywiki.info:/app/template-wiki/tiddlywiki.info:Z
+      - ./template-wiki/:/app/template-wiki/:ro,Z
 ```
 
-The user creates a `template-wiki/` directory alongside their compose file and puts their customized `tiddlywiki.info` there. The bind mount shadows the template file inside the container so materialiseWiki has nothing to overwrite.
+**Setting up the directories:**
 
-**Default tiddlywiki.info:** Use `scripts/template-wiki/tiddlywiki.info` from this skill as the starting point when helping users set up a new project. Copy it into the user's `template-wiki/` directory.
+1. Create an empty `template-wiki/` directory (just a `.gitkeep` for git tracking).
+2. Copy the default `tiddlywiki.info` from this skill's `scripts/twillm-wiki/tiddlywiki.info` into the user's `twillm-wiki/` directory. The skill fixture includes sensible defaults: markdown, highlight, tour, confetti, dynannotate, and the vanilla/snowwhite themes.
+3. Copy the rest of this skill's `scripts/twillm-wiki/` into the user's `twillm-wiki/`. This includes system tiddlers (site title, graphs, state) and required plugin content:
+   - `tiddlers/$__plugins_bdawg_tw-extras_routes_get-filter-titles.js.tid` — HTTP route for missing-links linting
+   - `tiddlers/$__plugins_cdaven_markdown-export.json` — markdown-export plugin definition
+   - `plugins/markdown-export-routes/` — directory containing a local plugin that exposes `/markdown/export/*` endpoints
 
 **Editing tiddlywiki.info:** Always Read the file first, then detect its existing indentation style (tabs or spaces) from the read output and match it when adding new entries. The skill's default fixture uses tabs, but users may have edited it with spaces — always follow whatever convention is already in their file. For example, to add `"tiddlywiki/katex"`:
+
 ```
 # If the existing lines use tabs (look for ^I or actual tab characters):
 -	"tiddlywiki/dynannotate",
@@ -101,7 +109,8 @@ The user creates a `template-wiki/` directory alongside their compose file and p
 +    "tiddlywiki/dynannotate",
 +    "tiddlywiki/katex",
 ```
-After editing, validate with `jq . < template-wiki/tiddlywiki.info`. If jq fails, report the error to the user — TiddlyWiki may tolerate non-standard JSON (comments, trailing commas, etc.) that jq rejects, so don't assume it's broken. Ask the user if they want you to fix the formatting or leave it as-is.
+
+After editing, validate with `jq . < twillm-wiki/tiddlywiki.info`. If jq fails, report the error to the user — TiddlyWiki may tolerate non-standard JSON (comments, trailing commas, etc.) that jq rejects, so don't assume it's broken. Ask the user if they want you to fix the formatting or leave it as-is.
 
 **Popular TiddlyWiki plugins** (add to `"plugins"` array):
 | Plugin | Use for |
@@ -110,6 +119,7 @@ After editing, validate with `jq . < template-wiki/tiddlywiki.info`. If jq fails
 | `tiddlywiki/katex` | Mathematical typesetting with KaTeX |
 | `tiddlywiki/railroad` | Railroad diagrams for grammar/IR visualizations |
 | `tiddlywiki/tw5.com-docs` | Official TiddlyWiki 5 documentation as a reference wiki |
+| `tiddlywiki/jszip` | This plugin provides primitives for creating Zip files in the browser. It also makes the JSZip library available for use by other plugins. |
 | `orange/mermaid-tw5` | Mermaid diagrams (flowcharts, sequence diagrams, etc.) |
 
 **Themes** can also be added to the `"themes"` array. Default: `[vanilla, snowwhite]`.
@@ -126,13 +136,20 @@ When the user asks to "check" or "upgrade" their docker-compose (e.g., "check my
 
 1. **Find the compose file:** Check for `docker-compose.yml`, `docker-compose.yaml`, `compose.yml`, `compose.yaml`.
 2. **Read it** (small files directly; large files use `docker compose config --services`).
-3. **Check each item independently** by looking for specific volume mount patterns in the user's file:
+3. **Gitignore migration:** If the user has a `.gitignore` with `twillm-wiki/tiddlywiki.info`, remove that line — it was removed from the canonical gitignore when we switched to the empty-template pattern (keeping `template-wiki/` free of files means there's nothing for `materialiseWiki()` to copy, so no clobbering occurs).
+4. **System tiddlers check:** Verify these required system tiddlers exist in the user's `twillm-wiki/` — if any are missing the setup is from before they were added or they were deleted accidentally:
+   - `plugins/markdown-export-routes/` (directory — a local plugin exposing `/markdown/export/*` endpoints)
+   - `tiddlers/$__plugins_bdawg_tw-extras_routes_get-filter-titles.js.tid` (HTTP route for missing-links linting)
+   - `tiddlers/$__plugins_cdaven_markdown-export.json` (markdown-export plugin definition)
+
+   Copy the files from this skill's `scripts/twillm-wiki/` fixture to restore any that are missing. For directory fixtures, copy the full tree.
+5. **Check each item independently** by looking for specific volume mount patterns in the user's file:
    - **Vault mount present** — grep for a line matching `./vault:/app/vault:Z` or a non-standard path (e.g. `./docs/wiki:/app/vault:Z`)
    - **twillm-wiki mount present** — grep for `./twillm-wiki:/app/twillm-wiki:Z`. If missing, this is critical: generated content from ingest is lost on container restart.
-   - **tiddlywiki.info bind mount** (optional but recommended) — if the user wants to add TiddlyWiki plugins, they need `./template-wiki/tiddlywiki.info:/app/template-wiki/tiddlywiki.info:Z`. Suggest this proactively if not present.
+   - **template-wiki bind mount present** — grep for `./template-wiki/:/app/template-wiki/:ro,Z`. Without it, the container uses the image's baked-in template-wiki/ which has actual files; materialiseWiki() copies those into twillm-wiki/ on every start, clobbering user edits and resetting tiddlywiki.info back to defaults.
    - **Port binding** — confirm the host port matches what's already in use (don't "fix" a deliberate port change)
    - **:Z SELinux label** — present for Linux hosts; note if absent on systems where it's needed
-4. **Propose changes.** Show the user exactly what's missing and ask before modifying. For example: "Your compose file is missing the `twillm-wiki` volume mount — without it, all generated content from ingestion will be lost when the container restarts. Want me to add it?" Do not try to copy lines from the fixture into the user's file; always write complete, valid volume mount entries.
-5. **Validate after changes:** Run `docker compose config` to confirm validity.
+6. **Propose changes.** Show the user exactly what's missing and ask before modifying. For example: "Your compose file is missing the `twillm-wiki` volume mount — without it, all generated content from ingestion will be lost when the container restarts. Want me to add it?" Do not try to copy lines from the fixture into the user's file; always write complete, valid volume mount entries.
+7. **Validate after changes:** Run `docker compose config` to confirm validity.
 
 If the user's setup has other services or a custom structure, preserve their configuration and only add what's missing. Do not suggest removing or modifying existing services or volumes that aren't part of twillm.

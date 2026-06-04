@@ -1,0 +1,10 @@
+title: $:/graph/Neighbourhood
+tags: $:/tags/twillm-shell
+template: $:/plugins/flibbles/graph/templates/live-graph
+filter: [all[tiddlers]!is[system]!tag[$:/tags/twillm-shell]first[]]
+neighbors.incoming: 1
+neighbors.outgoing: 1
+caption: Neighbourhood
+graph.nodes: {"shape":"box","color":"#d6e8ff","physics":"yes"}
+graph.edges: {"smooth":"yes","arrows":"to"}
+
