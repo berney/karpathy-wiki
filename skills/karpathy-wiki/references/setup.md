@@ -98,11 +98,26 @@ services:
 **Setting up the directories:**
 
 1. Create an empty `template-wiki/` directory (just a `.gitkeep` for git tracking).
-2. Copy the default `tiddlywiki.info` from this skill's `scripts/twillm-wiki/tiddlywiki.info` into the user's `twillm-wiki/` directory. The skill fixture includes sensible defaults: markdown, highlight, tour, confetti, dynannotate, and the vanilla/snowwhite themes.
-3. Copy the rest of this skill's `scripts/twillm-wiki/` into the user's `twillm-wiki/`. This includes system tiddlers (site title, graphs, state) and required plugin content:
+2. Ensure the user's `twillm-wiki/` directory exists (create it if missing).
+3. Copy all fixtures from this skill's `scripts/twillm-wiki/` into the user's `twillm-wiki/` using rsync:
+
+   ```bash
+   rsync -a <skill-scripts>/twillm-wiki/ ./twillm-wiki/
+   ```
+
+   This includes system tiddlers (site title, graphs, state) and required plugin content:
+   - `tiddlywiki.info` — sensible defaults: markdown, highlight, tour, confetti, dynannotate, vanilla/snowwhite themes
    - `tiddlers/$__plugins_bdawg_tw-extras_routes_get-filter-titles.js.tid` — HTTP route for missing-links linting
    - `tiddlers/$__plugins_cdaven_markdown-export.json` — markdown-export plugin definition
-   - `plugins/markdown-export-routes/` — directory containing a local plugin that exposes `/markdown/export/*` endpoints
+   - `plugins/markdown-export-routes/` — local plugin exposing `/markdown/export/*` endpoints
+
+   If `rsync` is not available, fall back to:
+
+   ```bash
+   cp -a <skill-scripts>/twillm-wiki/ ./twillm-wiki/
+   ```
+
+   The trailing `/` means "copy the contents, not the directory itself." Both preserve permissions and subdirectories, including dotfiles.
 
 **Editing tiddlywiki.info:** Always Read the file first, then detect its existing indentation style (tabs or spaces) from the read output and match it when adding new entries. The skill's default fixture uses tabs, but users may have edited it with spaces — always follow whatever convention is already in their file. For example, to add `"tiddlywiki/katex"`:
 
@@ -150,7 +165,21 @@ When the user asks to "check" or "upgrade" their docker-compose (e.g., "check my
    - `tiddlers/$__plugins_bdawg_tw-extras_routes_get-filter-titles.js.tid` (HTTP route for missing-links linting)
    - `tiddlers/$__plugins_cdaven_markdown-export.json` (markdown-export plugin definition)
 
-   Copy the files from this skill's `scripts/twillm-wiki/` fixture to restore any that are missing. For directory fixtures, copy the full tree.
+   Copy only the missing items — be surgical, don't overwrite the full directory. Use `rsync` with a dry run first to verify nothing unexpected would change:
+
+   ```bash
+   # Dry run — inspect before copying
+   rsync -avin <source>/ <destination>/
+   ```
+
+   Check that only the expected missing items would be created or overwritten. If safe, follow up with `rsync -a`. For example, if only one of the system tiddler directories is missing:
+
+   ```bash
+   rsync -avin <skill-scripts>/twillm-wiki/plugins/ ./twillm-wiki/plugins/
+   rsync -avin <skill-scripts>/twillm-wiki/tiddlers/$__plugins_bdawg_tw-extras_routes_get-filter-titles.js.tid ./twillm-wiki/tiddlers/
+   ```
+
+   If `rsync` is not available, fall back to `cp -a --update=none-fail source dest` which refuses to overwrite existing files — the copy will fail with an error if the destination already exists, rather than silently clobbering it.
 5. **Check each item independently** by looking for specific volume mount patterns in the user's file:
    - **Vault mount present** — grep for a line matching `./vault:/app/vault:Z` or a non-standard path (e.g. `./docs/wiki:/app/vault:Z`)
    - **twillm-wiki mount present** — grep for `./twillm-wiki:/app/twillm-wiki:Z`. If missing, this is critical: generated content from ingest is lost on container restart.
