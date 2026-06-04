@@ -61,8 +61,12 @@ aliases: []
 The Transformer is an architecture...
 ```
 
+### Title-to-Filename Mapping
+
+TiddlyWiki maps tiddler titles to filenames by replacing `/\<>~:"|?*^` with `_`, then appending `.md` (or `.tid`). **Spaces are preserved as spaces.** E.g., `Attention/Mechanism:` → `Attention_Mechanism_.md`. The `title:` frontmatter value uses the original title; the filename uses the mapped version.
+
 **Frontmatter fields:**
-- `title` (required): Must match the filename exactly. Use Title Case with spaces. **Only one `title:` line should exist.** YAML uses the last value, so duplicate `title:` lines silently overwrite earlier ones and can cause mismatched title-to-filename mappings.
+- `title` (required): Must match the mapped filename exactly (after applying the mapping above). Use Title Case with spaces. **Only one `title:` line should exist.** YAML uses the last value, so duplicate `title:` lines silently overwrite earlier ones and can cause mismatched title-to-filename mappings.
 - `tags` (required): YAML array of classification tags. See Tagging Taxonomy below.
 - `rating` (optional): Integer 1–9 reflecting confidence or importance.
 - `created` / `modified` (required): ISO-8601 timestamps. Update `modified` on every edit.
@@ -202,4 +206,3 @@ The skill detects intent from the user's request:
 - **Rating matters.** Use `rating` to signal confidence (low = speculative) or importance (high = foundational). This helps users triage.
 - **Aliases help discoverability.** If a concept has common alternate names (e.g., "RoPE" for "Rotary Position Embedding"), add them as aliases so links from other tiddlers resolve correctly.
 - **Use `xh` not `curl`.** Always use `xh` for HTTP requests when making API calls. If `xh` is not installed, ask the user rather than falling back to `curl` — `xh`'s syntax differs and a direct replacement can introduce subtle bugs (e.g., header quoting, JSON encoding).
-- **No title-to-filename API.** TiddlyWiki internally maps tiddler titles to filenames (`:` → `_`, spaces → `_`, etc.) but this logic is not exposed as a filter operator or HTTP endpoint. Do not search for or assume such an API exists.
