@@ -30,7 +30,7 @@ project-root/
 - Vault tiddlers are in `vault/` by default (see Vault Directory below). The LLM writes both `.md` and `.tid` files there.
 - `twillm-wiki/` is where twillm persists generated and derived content from ingestion — when you ingest a source, the auto-generated tiddlers live here. Both directories need persistence (bind-mounted in Docker, or locally with npx).
 
-**Vault vs twillm-wiki:** Your hand-written tiddlers go in `vault/`. Twillm's auto-generated output from ingest goes in `twillm-wiki/`. For project setup, version control, and compose configuration, see [Setup Guide](references/setup.md).
+**Vault vs twillm-wiki:** Your hand-written tiddlers go in `vault/`. Twillm's auto-generated output from ingest goes in `twillm-wiki/`. For project setup, version control, and compose configuration, see the Setup Guide (in this skill's references/ directory).
 
 **Core wiki files:** In a minimal vault, just `.md` and `.tid` tiddlers. `index.md` and `log.md` are optional helpers — TiddlyWiki's live views (`.tid` with wikitext filters) can replace the index entirely.
 
@@ -60,7 +60,7 @@ The Transformer is an architecture...
 ```
 
 **Frontmatter fields:**
-- `title` (required): Must match the filename exactly. Use Title Case with spaces.
+- `title` (required): Must match the filename exactly. Use Title Case with spaces. **Important: only one `title:` line should exist.** YAML uses the last value, so duplicate `title:` lines silently overwrite earlier ones and can cause mismatched title-to-filename mappings.
 - `tags` (required): YAML array of classification tags. See Tagging Taxonomy below.
 - `rating` (optional): Integer 1–9 reflecting confidence or importance.
 - `created` / `modified` (required): ISO-8601 timestamps. Update `modified` on every edit.
@@ -75,7 +75,27 @@ Use double-bracket syntax for all inter-tiddler links:
 
 Always link to existing tiddlers when referencing concepts they cover. Create a new tiddler for a concept if one doesn't exist and it's likely to be referenced again.
 
+**Never rely on CamelCase linking.** Always use explicit `[[wikilinks]]`. Writing bare `ThemeMechanism` instead of `[[ThemeMechanism]]` is fragile: TiddlyWiki may or may not auto-convert it depending on configuration and installed plugins. Explicit brackets are always a link — unambiguous in every context.
+
+#### Disabling auto-links with `~` prefix
+
+TiddlyWiki auto-converts CamelCase words into wikilinks inside tables, code blocks, and other contexts. If you don't want a word to become a link, prefix the wikilink with `~`:
+
+```
+~ThemeMechanism    — displays "ThemeMechanism" as plain text, no link created
+```
+
+#### Table headers and CamelCase auto-linking
+
+Table column headers like `| SystemTag |` are treated as CamelCase and become auto-links. To prevent this, use spaces: `| System Tag |`.
+
+#### Auto-linking system tiddlers
+
+TiddlyWiki system tiddlers like `$:/ControlPanel`, `$:/theme`, and `$:/language` are valid tiddler titles that TiddlyWiki auto-links (no brackets needed). Write them directly in prose — they become working links.
+
 ### Shadow Tiddlers
+
+**Use `xh` not `curl`:** Always use `xh` for HTTP requests when making API calls. If `xh` is not installed, ask the user rather than falling back to `curl` — `xh`'s syntax differs and a direct replacement can introduce subtle bugs (e.g., header quoting, JSON encoding).
 
 **Shadow tiddlers** are built-in defaults from TW5 core and plugins (e.g., `tw5.com-docs` plugin). They are fully retrievable and viewable through the WebServer API at all times — they are not hidden. What changes is which version TW5 renders:
 
@@ -129,6 +149,7 @@ xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[all[shadow
 Shadow tiddlers are TiddlyWiki's built-in defaults from TW5 core and plugins — they're always present but only render when no ordinary tiddler shares their title. This section covers detection and resolution; the actual retitling steps are in the **Retitling Tiddlers** operation below.
 
 **Before creating a new tiddler**, check if the chosen title already shadows something:
+
 ```bash
 # Does this title shadow anything? (count only)
 xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[MyNewTitle]is[shadow]]' | jq length
@@ -168,10 +189,11 @@ Use these classification tags consistently:
 
 ### Setup
 
-When initializing a new project:
+**Read `references/setup.md` first** — it has the full procedures for Docker compose configuration, gitignore, tiddlywiki.info management, system tiddler fixtures, upgrade paths, and setup repair. Use it for all setup-related operations below.
 
-1. **CLAUDE.md** — The schema, at the project root. Define the tag taxonomy (customized to the user's domain), page conventions, and workflow preferences.
-2. **vault/** — Create the vault directory with initial tiddlers. `index.md` and `log.md` are optional — TiddlyWiki's live wikitext views can replace an index entirely.
+- **New wiki:** Create CLAUDE.md (tag taxonomy customized to user's domain), vault/, and twillm-wiki/ (copy from `scripts/twillm-wiki/`). Ask the user about their primary domain.
+- **Check or upgrade existing setup:** Verify mounts, gitignore, compose validity, and required system tiddlers exist in `twillm-wiki/`. Restore any missing files from this skill's `scripts/twillm-wiki/` fixture.
+- **Repair broken setup:** Diagnose with the reference — empty-template integrity, bind mount presence (`:ro,Z` on template-wiki only), compose validity, and system tiddler restoration.
 
 Ask the user about their primary domain (research topic, personal interest, business area) and customize CLAUDE.md accordingly.
 
@@ -203,12 +225,15 @@ When you need to rename a tiddler (e.g., fixing a shadow conflict, improving nam
 1. **Change the `title:` field in the frontmatter** to the new name (must exactly match the new filename).
 2. **Rename the file** on disk to match the new title.
 3. **Fix broken wikilinks:** find all references to the old title and update them:
+
    ```bash
    xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[backlinks[{OldTitle}]]' | jq 'map(.title)'
    ```
+
    Update every `[[OldTitle]]` in those files to point to the new title.
 
 **Before retitling,** check that no tiddler already has the target name:
+
 ```bash
 xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[{NewTitle}]]' | jq length
 # == 0 → safe, no conflict
@@ -220,13 +245,85 @@ xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[{NewTitle
 
 Periodically, health-check the wiki:
 
-1. **Broken links:** Scan all tiddlers for `[[...]]` links pointing to non-existent tiddlers. Flag them.
-2. **Orphan pages:** Tiddlers with no inbound wikilinks from other content tiddlers (excluding index.md, log.md). Suggest whether they should be merged, linked, or removed.
+1. **Broken links:** Use the `[all[missing]!is[shadow]!is[system]]` filter via `filter-titles.json`, not a grep scan. The Missing Links Linting section covers the full workflow below.
+2. **Orphan pages:** Tiddlers with no inbound wikilinks are not necessarily a problem — they may be useful reference pages that simply aren't cross-referenced yet. Only flag them if it makes sense for navigation.
 3. **Missing concepts:** Identify important topics mentioned in multiple tiddlers but lacking their own page.
 4. **Stale claims:** Newer sources may have superseded older claims — flag contradictions between pages.
 5. **Tag hygiene:** Check for inconsistent tags (e.g., `concepts` vs `Concept`, or tags that should be `Topic` vs `Concept`).
 
 Report findings to the user and propose fixes. Don't silently change things — let the user decide.
+
+#### Missing Links Linting
+
+**Missing links** are tiddler titles referenced by hard wikilinks (`[[Title]]`) but don't exist in the store (not even as shadows). The workflow for finding and fixing them:
+
+**Check whether CamelCase auto-linking is enabled.** TiddlyWiki's `$:/config/WikiParserRules/Inline/wikilink` controls this — its value is either `enable` or `disable`. Default since TW5 v5.3.0 is `disable`, but a plugin shadow can override it to `enable`. Check first:
+
+```bash
+# Is CamelCase auto-linking enabled?
+xh get http://localhost:$PORT/recipes/default/tiddlers/$:/config/WikiParserRules/Inline/wikilink | jq -r '.text'
+# → "enable" or "disable"
+```
+
+This determines what counts as a link:
+- **If `disable`:** Bare `FooBar` is plain text — it is never a link and will not appear in `[all[missing]]`.
+- **If `enable`:** Bare `FooBar` (CamelCase) is auto-converted to a wikilink. It must exist as a tiddler or appear as broken. Treat it the same as `[[FooBar]]`.
+
+**Use the custom `filter-titles.json` endpoint** instead of `tiddlers.json`. The TiddlyWeb API restricts filter input to existing non-system ordinary tiddlers, so `[all[missing]]` and `[links[]]` miss references from system tiddlers and plugins. The custom route has no such restriction and catches all missing titles.
+
+```bash
+# Find ALL broken link source tiddlers (one pass)
+xh get http://localhost:$PORT/recipes/default/filter-titles.json filter=='[all[missing]!is[shadow]!is[system]backlinks[]]' | jq -r '.[]'
+
+# For each source, find which titles are missing:
+xh get http://localhost:$PORT/recipes/default/filter-titles.json 'filter==[[Source Tiddler Title]links[]is[missing]!is[shadow]!is[system]]' | jq -r '.[]'
+
+# Count a specific tiddler's missing links:
+xh get http://localhost:$PORT/recipes/default/filter-titles.json 'filter==[[Source Tiddler Title]links[]is[missing]!is[shadow]!is[system]count[]]'
+```
+
+The filter chain works as:
+1. `[all[missing]]` — get all missing titles
+2. `!is[shadow]` — remove ones that have a matching shadow (title mismatch, not truly broken)
+3. `!is[system]` — remove system tiddlers
+4. `backlinks[]` — resolve to the source tiddlers pointing at each missing title
+
+#### Fixing "Missing" Links — Title Mismatches & Hallucinations
+
+When a wikilink shows up as missing, don't immediately create a new tiddler. Three common cases:
+
+**A) Title mismatch (CamelCase/casing difference):** Only relevant if CamelCase auto-linking is `enable`. The tiddler exists but under a different title than the wikilink uses. Split CamelCase into spaced words and search shadows:
+
+```bash
+# "ThemeMechanism" is missing — Check all (ordinary) tiddlers:
+xh get http://localhost:$PORT/recipes/default/filter-titles.json 'filter==[all[tiddlers]search:title[Theme Mechanism]]' | jq -r '.[:3]'
+
+# Check if there's any "Theme Mechanism" shadow tiddlers:
+xh get http://localhost:$PORT/recipes/default/filter-titles.json 'filter==[all[shadows]search:title[Theme Mechanism]]' | jq -r '.[:3]'
+
+# Check if there's any "Theme Mechanism" oridinary or shadow tiddlers:
+xh get http://localhost:$PORT/recipes/default/filter-titles.json 'filter==[all[tiddlers+shadows]search:title[Theme Mechanism]]' | jq -r '.[:3]'
+```
+
+If found, update the wikilink to match the actual title.
+
+**B) CamelCase auto-link in table headers:** Only relevant if CamelCase auto-linking is `enable`. A word like `| SystemTag |` in a Markdown table header gets auto-linked because TiddlyWiki treats CamelCase as a wikilink. If this isn't meant to be a link, fix by using spaces: `| System Tag |`.
+
+**C) Hallucinated link:** The wikilink references a concept that doesn't actually exist in the wiki (no ordinary tiddler, no shadow match). Verify by checking if the search returns anything — if nothing matches even with CamelCase splitting, the wikilink is likely hallucinated. Or perhaps the missing content hasn't been added yet. Generally, you should create the target tiddler before other tiddlers link to it. If the concept doesn't belong in the wiki at all, remove the reference from the source tiddler.
+
+#### Counting with `count[]` (no pipe to jq)
+
+The TW5 `[count[]]` filter operator replaces `| jq length`:
+
+```bash
+# Instead of: xh get ... | jq length
+xh get http://localhost:$PORT/recipes/default/filter-titles.json filter=='[all[shadows]count[]]'
+# → ["1768"]
+
+# Works with any filter:
+xh get ... filter=='[tag[Concept]count[]]'
+xh get ... filter=='[[Source Tiddler]links[]is[missing]count[]]'
+```
 
 ### Computed Views (.tid)
 
@@ -247,17 +344,48 @@ Useful computed views include tag listings (`<<list-links filter:"[tag[X]]">>`),
 
 Quick start via npx (no dependencies): `npx github:Jermolene/twillm` — auto-detects `vault/`, `notes/`, `content/`, or `.obsidian/` cwd, starts on port 8080. For non-standard vault paths: `npx github:Jermolene/twillm docs/wiki`.
 
-For Docker setup (isolated, reproducible) — compose detection, vault mounting, tiddlywiki.info persistence, plugin management, or checking an existing deployment — see [Setup Guide](references/setup.md).
+For Docker setup (isolated, reproducible) — compose detection, vault mounting, tiddlywiki.info persistence, plugin management, or checking an existing deployment — consult the Setup Guide (this skill's references/setup.md).
+
+### Discovering twillm's Port
+
+Never hard-code a port. Before making any API call (`xh get`, `xh post`), discover which port twillm is actually listening on:
+
+1. **Check for `docker-compose.yml`** in the project root. If it exists, find the service running twillm and extract its published host port (left side of the `<host>:<container>` mapping):
+
+   ```bash
+   # List compose services — look for the one that runs twillm
+   docker compose config --services
+   ```
+
+   Once you know the service name, use `yq` if available:
+
+   ```bash
+   yq '.services.<service>.ports[] | select(.published != null) | .published' docker-compose.yml
+   ```
+
+   Otherwise parse the JSON config output:
+
+   ```bash
+   docker compose config --format json <service> | jq -r '[.Ports[]? | select(has("Published")) | .Published] | first'
+   ```
+
+   Confirm it's running:
+
+   ```bash
+   docker compose ps <service>
+   ```
+
+2. **If no `docker-compose.yml`** (e.g. npx or other setup), ask the user what port twillm is running on rather than guessing.
+
+Once discovered, use that port for all subsequent API calls rather than re-checking each time. Store it as `$PORT` in your working context for the session.
 
 ## Intent Detection
 
 The skill detects intent from the user's request:
-- **Init a new wiki** ("set up", "initialize", "create", "start") → do BOTH Docker compose setup AND `.gitignore` configuration. Only skip the compose file if the user explicitly mentions npx (in which case still configure gitignore unless they decline version control).
-- **Check existing setup** ("check my docker", "verify", "upgrade") → check BOTH Docker compose AND `.gitignore` configuration. Report what's present and what's missing.
-- **Wiki operations** (ingest, query, lint, computed views) → primary mode, focus on wiki work. If no running instance is detected, briefly mention at the end that they might want to set up twillm.
-- **Setup/Run twillm** ("run twillm", "setup docker") → trigger Docker compose flow; only use npx if the user explicitly mentions it.
-
-If the user has no twillm setup but starts asking about ingestion, briefly remind them at the end: "You might also want to ask me to set up twillm so you can browse the wiki live in a browser."
+- **Init a new wiki** ("set up", "initialize", "create", "start") → see [Setup](#setup). Only skip the compose file if the user explicitly mentions npx (in which case still configure gitignore unless they decline version control).
+- **Check existing setup** ("check my docker", "verify", "upgrade") → see [Setup](#setup). Report what's present and what needs updating.
+- **Wiki operations** → see [Ingest](#ingest), [Query](#query), [Lint](#lint), [Computed Views](#computed-tid). Primary mode, focus on wiki work. If no running instance is detected, briefly mention at the end that they might want to set up twillm.
+- **Setup/Run twillm** ("run twillm", "setup docker") → see [Setup](#setup). Only use npx if the user explicitly mentions it.
 
 ## Tips
 
@@ -266,3 +394,4 @@ If the user has no twillm setup but starts asking about ingestion, briefly remin
 - **The index is your GPS.** Updating index.md on every ingest is what makes navigation possible without embedding infrastructure. Never skip it.
 - **Rating matters.** Use `rating` to signal confidence (low = speculative) or importance (high = foundational). This helps users triage.
 - **Aliases help discoverability.** If a concept has common alternate names (e.g., "RoPE" for "Rotary Position Embedding"), add them as aliases so links from other tiddlers resolve correctly.
+- **No title-to-filename API.** TiddlyWiki internally maps tiddler titles to filenames (`:` → `_`, spaces → `_`, etc.) but this logic is not exposed as a filter operator or HTTP endpoint. Do not search for or assume such an API exists.
