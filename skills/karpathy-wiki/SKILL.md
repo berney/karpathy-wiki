@@ -61,16 +61,16 @@ aliases: []
 The Transformer is an architecture...
 ```
 
+**Frontmatter fields:**
+- `title` (required): The tiddler's logical title — the original, unmapped name. Use Title Case with spaces. **Only one `title:` line should exist.** YAML uses the last value, so duplicate `title:` lines silently overwrite earlier ones and can cause mismatched title-to-filename mappings. The file itself must be named using the mapped version (see Title-to-Filename Mapping below).
+- `tags` (required): YAML array of classification tags. See Tagging Taxonomy below.
+- `rating` (optional): Integer 1–9 reflecting confidence or importance.
+- `created` / `modified` (required): ISO-8601 timestamps — both millisecond UTC (`2026-06-04T10:21:47.840Z`) and timezone offsets (`2026-06-04T12:00:00+10:00`) are fine. Update `modified` on every edit.
+- `aliases` (optional): Alternate names that should resolve to this tiddler, e.g. `[Rotary Positional Encoding]`.
+
 ### Title-to-Filename Mapping
 
 TiddlyWiki maps tiddler titles to filenames by replacing `/\<>~:"|?*^` with `_`, then appending `.md` (or `.tid`). **Spaces are preserved as spaces.** E.g., `Attention/Mechanism:` → `Attention_Mechanism_.md`. The `title:` frontmatter value uses the original title; the filename uses the mapped version.
-
-**Frontmatter fields:**
-- `title` (required): Must match the mapped filename exactly (after applying the mapping above). Use Title Case with spaces. **Only one `title:` line should exist.** YAML uses the last value, so duplicate `title:` lines silently overwrite earlier ones and can cause mismatched title-to-filename mappings.
-- `tags` (required): YAML array of classification tags. See Tagging Taxonomy below.
-- `rating` (optional): Integer 1–9 reflecting confidence or importance.
-- `created` / `modified` (required): ISO-8601 timestamps. Update `modified` on every edit.
-- `aliases` (optional): Alternate names that should resolve to this tiddler, e.g. `[Rotary Positional Encoding]`.
 
 ### Wikilinks — how tiddlers connect
 
