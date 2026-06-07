@@ -70,7 +70,7 @@ The Transformer is an architecture...
 
 ### Title-to-Filename Mapping
 
-TiddlyWiki maps tiddler titles to filenames by replacing `/\<>~:"|?*^` with `_`, then appending `.md` (or `.tid`). **Spaces are preserved as spaces.** E.g., `Attention/Mechanism:` → `Attention_Mechanism_.md`. The `title:` frontmatter value uses the original title; the filename uses the mapped version.
+The canonical-filenames plugin (exposing `GET /bdawg/canonical`) handles title-to-filename mapping automatically. Before creating any tiddler, call this endpoint to get the correct `canonical` filename — never guess from the title yourself. The `title:` frontmatter value always uses the original, human-readable title; the filename uses the plugin's sanitised mapping.
 
 ### Wikilinks — how tiddlers connect
 
@@ -121,12 +121,31 @@ Ask the user about their primary domain (research topic, personal interest, busi
 When the user provides a new source (a file in a directory, pasted text, or a URL to fetch):
 
 1. **Read and discuss.** Read the source, summarize key takeaways, agree on what's most important.
-2. **Create/update tiddlers.** Write focused tiddlers for each distinct concept, entity, or finding. Keep them small and atomic — one concept per file. Before creating a new tiddler, check that the title won't override an existing Shadow (see `references/checking-tiddlers.md`). Link generously to existing tiddlers using wikilinks.
+2. **Create/update tiddlers.** Write focused tiddlers for each distinct concept, entity, or finding. Keep them small and atomic — one concept per file. Before creating a new tiddler, call `GET /bdawg/canonical` (see `references/checking-tiddlers.md`) to check existence, shadow status, and get the canonical filename in one call. Link generously to existing tiddlers using wikilinks.
 3. **Update index.md.** Add entries under the appropriate category headings with link + one-line summary.
 4. **Update log.md.** Add entries in chronological order — oldest at the top, newest appended to the bottom (end of file). Each entry is a timestamped heading: `## [YYYY-MM-DD] ingest | Source Title`.
 5. **Create Source tiddler.** Create a `[[Source Name]]` tiddler tagged `Source` that summarizes the document, lists key findings, and links to the concept tiddlers it touched.
 
 A single source may create 3–10 new tiddlers and update 5–15 existing ones. Always update — don't duplicate. If a newer source refines or contradicts an older tiddler, revise the old one and note the change in the body (e.g., "Updated 2026-05-21 per [[New Paper Title]]").
+
+### Curating Tiddler Titles
+
+After several ingestions, decollisioning may have left suboptimal titles — e.g., the original source got called "Foo", then a newer source was created as "Foo Current Version" to avoid the collision, while "Foo" actually describes an older legacy topic. A curation pass can improve title quality across the wiki.
+
+**How curation works:**
+
+1. **Scan titles and content.** Read tiddler titles alongside their body text. Look for cases where a different title would be a better fit — where the content of one tiddler belongs under the title of another, or where a qualifier is misplaced.
+2. **Plan the rename sequence.** Determine which tiddlers to retitle and what their new titles should be. Check that each target title is free (`GET /bdawg/canonical`) before committing — if there's a collision, resolve it first (either by updating the existing tiddler or picking an unambiguous name).
+3. **Execute renames.** For each retitled tiddler:
+   1. Read the file to identify all wikilinks pointing to the old title.
+   2. Rename the file on disk (`mv`).
+   3. Update the `title:` frontmatter to the new name.
+   4. Update any wikilinks in other files that reference the old title.
+4. **Update index.md.** Remove the old entries and add them under their new titles.
+
+Curation improves over time — a wiki that started as "Foo" can, after several rounds of ingestion and curation, become "Foo Legacy", "Foo Current Version", and a newly ingested "Foo". This is deliberate: better titles make the wiki more useful even if it requires extra work to maintain them.
+
+**Fixing filenames without changing titles:** If a tiddler's title is correct but its filename doesn't match the canonical mapping (e.g., titled "Foo: Widgets" but stored as `foo-widgets.md`), call `POST /bdawg/canonical` — it renames the file to the canonical name without touching the title. For a full cleanup pass, use `POST /bdawg/canonical/rename-all`. See `references/checking-tiddlers.md#fixing-non-canonical-filenames`.
 
 ### Query
 
@@ -146,6 +165,7 @@ Periodically, health-check the wiki:
 3. **Missing concepts:** Identify important topics mentioned in multiple tiddlers but lacking their own page.
 4. **Stale claims:** Newer sources may have superseded older claims — flag contradictions between pages.
 5. **Tag hygiene:** Check for inconsistent tags (e.g., `concepts` vs `Concept`, or tags that should be `Topic` vs `Concept`).
+6. **Non-canonical filenames:** Scan tiddlers where `GET /bdawg/canonical` reports `isLooselyCanonical: false` — the file exists but its name doesn't match the canonical mapping (e.g., stored as `foo-widgets.md` instead of `Foo_ Widgets.md`). Case-only mismatches (`log.md` for title "Log", where `isCanonical: false` but `isLooselyCanonical: true`) are fine and don't need fixing. Propose running `POST /bdawg/canonical/rename-all` to fix all actual non-canonical names at once.
 
 Report findings to the user and propose fixes. Don't silently change things — let the user decide.
 
@@ -197,6 +217,7 @@ The skill detects intent from the user's request:
 - **Check existing setup** ("check my docker", "verify", "upgrade") → see [Setup](#setup). Report what's present and what needs updating.
 - **Wiki operations** → see [Ingest](#ingest), [Query](#query), [Lint](#lint), or `references/lint-workflows.md`. Primary mode, focus on wiki work. If no running instance is detected, briefly mention at the end that they might want to set up twillm.
 - **Setup/Run twillm** ("run twillm", "setup docker") → see [Setup](#setup). Only use npx if the user explicitly mentions it.
+- **Edit tiddler title** ("rename Foo to Bar", "retitle X as Y", "change the title of Foo to Bar", "move Foo to Bar", "mv Foo Bar") → all synonymous. See `references/lint-workflows.md#Retitling Tiddlers`. The operation: rename the file on disk, update the `title:` frontmatter, fix wikilinks in other files that reference the old title.
 
 ## Tips
 

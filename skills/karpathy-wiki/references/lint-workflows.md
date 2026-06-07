@@ -87,9 +87,43 @@ xh get ... filter=='[tag[Concept]count[]]'
 xh get ... filter=='[[Source Tiddler]links[]is[missing]count[]]'
 ```
 
+## Fixing Non-Canonical Filenames
+
+A tiddler's filename may not match the canonical mapping for its title. For example, a tiddler titled "Foo: Widgets" might be stored as `foo-widgets.md`. The `POST /bdawg/canonical` endpoint renames the file on disk to the correct canonical name without changing the title.
+
+**Check** whether a file needs fixing by looking at `isLooselyCanonical`:
+
+```bash
+xh get http://localhost:$PORT/bdawg/canonical title=='Foo: Widgets'
+# isLooselyCanonical == false → filename needs fixing (e.g. "foo-widgets.md" vs "Foo_ Widgets.md")
+# isLooselyCanonical == true  → name is fine as-is, even if isCanonical is false
+
+xh get http://localhost:$PORT/bdawg/canonical title=='Log'
+# { isCanonical: false, isLooselyCanonical: true } — do nothing, log.md is good enough
+```
+
+**Fix a single file:**
+
+```bash
+# Non-strict (default — skips casing-only mismatches like log.md → Log.md)
+xh post http://localhost:$PORT/bdawg/canonical x-requested-with:TiddlyWiki title=='Foo: Widgets'
+```
+
+**Fix all files in the vault:**
+
+```bash
+# Non-strict (skips casing-only mismatches) — useful for a full cleanup pass
+xh post http://localhost:$PORT/bdawg/canonical/rename-all x-requested-with:TiddlyWiki
+
+# Strict (also fixes casing like log.md → Log.md)
+xh post http://localhost:$PORT/bdawg/canonical/rename-all x-requested-with:TiddlyWiki strict==true
+```
+
+System tiddlers are skipped by both endpoints and never renamed. The default non-strict mode is recommended — it only fixes actual mismatches, not casing-only ones.
+
 ## Retitling Tiddlers
 
-When you need to rename a tiddler (e.g., fixing a shadow conflict, improving naming consistency):
+When a user says "rename Foo to Bar", "retitle Foo as Bar", "change the title of Foo to Bar", "move Foo to Bar", or "mv Foo Bar", they mean change the tiddler's title. In practice this means: rename the file on disk (e.g., `Foo.md` → `Bar.md`) and update the `title:` frontmatter field.
 
 1. **Change the `title:` field in the frontmatter** to the new name (must exactly match the new filename).
 2. **Rename the file** on disk to match the new title.
