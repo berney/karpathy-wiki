@@ -123,7 +123,7 @@ When the user provides a new source (a file in a directory, pasted text, or a UR
 1. **Read and discuss.** Read the source, summarize key takeaways, agree on what's most important.
 2. **Create/update tiddlers.** Write focused tiddlers for each distinct concept, entity, or finding. Keep them small and atomic — one concept per file. Before creating a new tiddler, check that the title won't override an existing Shadow (see `references/checking-tiddlers.md`). Link generously to existing tiddlers using wikilinks.
 3. **Update index.md.** Add entries under the appropriate category headings with link + one-line summary.
-4. **Update log.md.** Append a timestamped entry: `## [YYYY-MM-DD] ingest | Source Title`.
+4. **Update log.md.** Add entries in chronological order — oldest at the top, newest appended to the bottom (end of file). Each entry is a timestamped heading: `## [YYYY-MM-DD] ingest | Source Title`.
 5. **Create Source tiddler.** Create a `[[Source Name]]` tiddler tagged `Source` that summarizes the document, lists key findings, and links to the concept tiddlers it touched.
 
 A single source may create 3–10 new tiddlers and update 5–15 existing ones. Always update — don't duplicate. If a newer source refines or contradicts an older tiddler, revise the old one and note the change in the body (e.g., "Updated 2026-05-21 per [[New Paper Title]]").
