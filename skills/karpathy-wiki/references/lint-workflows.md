@@ -33,17 +33,17 @@ When camel case linking is **disabled**, CamelCase words are already plain text 
 
 ### Step 2: Find Broken Links
 
-**Use the custom `filter-titles.json` endpoint** instead of `tiddlers.json`. The TiddlyWeb API restricts filter input to existing non-system ordinary tiddlers, so `[all[missing]]` and `[links[]]` miss references from system tiddlers and plugins. The custom route has no such restriction and catches all missing titles.
+**Use the `/bdawg/filter-titles` endpoint** instead of `tiddlers.json`. The TiddlyWeb API restricts filter input to existing non-system ordinary tiddlers, so `[all[missing]]` and `[links[]]` miss references from system tiddlers and plugins. The custom route has no such restriction and catches all missing titles.
 
 ```bash
 # Find ALL broken link source tiddlers (one pass)
-xh get http://localhost:$PORT/recipes/default/filter-titles.json filter=='[all[missing]!is[shadow]!is[system]backlinks[]]' | jq -r '.[]'
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[all[missing]!is[shadow]!is[system]backlinks[]]' | jq -r '.[]'
 
 # For each source, find which titles are missing:
-xh get http://localhost:$PORT/recipes/default/filter-titles.json 'filter==[[Source Tiddler Title]links[]is[missing]!is[shadow]!is[system]]' | jq -r '.[]'
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[[Source Tiddler Title]links[]is[missing]!is[shadow]!is[system]]' | jq -r '.[]'
 
 # Count a specific tiddler's missing links:
-xh get http://localhost:$PORT/recipes/default/filter-titles.json 'filter==[[Source Tiddler Title]links[]is[missing]!is[shadow]!is[system]count[]]'
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[[Source Tiddler Title]links[]is[missing]!is[shadow]!is[system]count[]]'
 ```
 
 **Filter chain breakdown:**
@@ -60,13 +60,13 @@ When a wikilink shows up as missing, don't immediately create a new tiddler. Thr
 
 ```bash
 # "ThemeMechanism" is missing — Check all (ordinary) tiddlers:
-xh get http://localhost:$PORT/recipes/default/filter-titles.json 'filter==[all[tiddlers]search:title[Theme Mechanism]]' | jq -r '.[:3]'
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[all[tiddlers]search:title[Theme Mechanism]]' | jq -r '.[:3]'
 
 # Check if there's any "Theme Mechanism" shadow tiddlers:
-xh get http://localhost:$PORT/recipes/default/filter-titles.json 'filter==[all[shadows]search:title[Theme Mechanism]]' | jq -r '.[:3]'
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[all[shadows]search:title[Theme Mechanism]]' | jq -r '.[:3]'
 
 # Check all (ordinary + shadow) tiddlers:
-xh get http://localhost:$PORT/recipes/default/filter-titles.json 'filter==[all[tiddlers+shadows]search:title[Theme Mechanism]]' | jq -r '.[:3]'
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[all[tiddlers+shadows]search:title[Theme Mechanism]]' | jq -r '.[:3]'
 ```
 
 If found, update the wikilink to match the actual title.
@@ -79,28 +79,27 @@ The TW5 `[count[]]` filter operator replaces `| jq length`:
 
 ```bash
 # Instead of: xh get ... | jq length
-xh get http://localhost:$PORT/recipes/default/filter-titles.json filter=='[all[shadows]count[]]'
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[all[shadows]count[]]'
 # → ["1768"]
 
 # Works with any filter:
-xh get ... filter=='[tag[Concept]count[]]'
-xh get ... filter=='[[Source Tiddler]links[]is[missing]count[]]'
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tag[Concept]count[]]'
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[[Source Tiddler]links[]is[missing]count[]]'
 ```
 
 ## Fixing Non-Canonical Filenames
 
 A tiddler's filename may not match the canonical mapping for its title. For example, a tiddler titled "Foo: Widgets" might be stored as `foo-widgets.md`. The `POST /bdawg/canonical` endpoint renames the file on disk to the correct canonical name without changing the title.
 
-**Check** whether a file needs fixing by looking at `isLooselyCanonical`:
+### Scanning all tiddlers
+
+Before fixing individual files, scan every ordinary tiddler for non-canonical filenames in one shot:
 
 ```bash
-xh get http://localhost:$PORT/bdawg/canonical title=='Foo: Widgets'
-# isLooselyCanonical == false → filename needs fixing (e.g. "foo-widgets.md" vs "Foo_ Widgets.md")
-# isLooselyCanonical == true  → name is fine as-is, even if isCanonical is false
-
-xh get http://localhost:$PORT/bdawg/canonical title=='Log'
-# { isCanonical: false, isLooselyCanonical: true } — do nothing, log.md is good enough
+xh get http://localhost:$PORT/bdawg/canonical | jq 'map(select(.isLooselyCanonical | not) | {title, canonical})'
 ```
+
+This returns all non-system tiddlers and filters for those whose filename doesn't match the canonical mapping. The output shows each problematic title and the filename it should have. Use this list to decide between a targeted fix (`POST /bdawg/canonical` for one file) or a full cleanup pass (`POST /bdawg/canonical/rename-all`).
 
 **Fix a single file:**
 
@@ -130,7 +129,7 @@ When a user says "rename Foo to Bar", "retitle Foo as Bar", "change the title of
 3. **Fix broken wikilinks:** find all references to the old title and update them:
 
    ```bash
-   xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[backlinks[{OldTitle}]]' | jq 'map(.title)'
+   xh get http://localhost:$PORT/bdawg/filter-titles filter=='[[{OldTitle}]backlinks[]]' | jq -r '.[]'
    ```
 
    Update every `[[OldTitle]]` in those files to point to the new title.
@@ -138,8 +137,8 @@ When a user says "rename Foo to Bar", "retitle Foo as Bar", "change the title of
 **Before retitling,** check that no tiddler already has the target name:
 
 ```bash
-xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[{NewTitle}]count[]]'
-# == 0 → safe, no conflict
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[[{NewTitle}]count[]]'
+# → 0 means safe, no conflict
 ```
 
 **When retitling a tiddler that overrides a (shadow) tiddler,** only change the title and filename. Do **not** add an `aliases:` field for the old name — just omit it. See `shadow-tiddlers.md` for shadow detection and resolution details.

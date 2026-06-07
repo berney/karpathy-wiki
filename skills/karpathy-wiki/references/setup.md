@@ -107,7 +107,6 @@ services:
 
    This includes system tiddlers (site title, graphs, state) and required plugin content:
    - `tiddlywiki.info` — sensible defaults: markdown, highlight, tour, confetti, dynannotate, vanilla/snowwhite themes
-   - `tiddlers/$__plugins_bdawg_tw-extras_routes_get-filter-titles.js.tid` — HTTP route for missing-links linting
    - `tiddlers/$__plugins_cdaven_markdown-export.json` — markdown-export plugin definition
    - `plugins/markdown-export-routes/` — local plugin exposing `/markdown/export/*` endpoints
 
@@ -162,7 +161,6 @@ When the user asks to "check" or "upgrade" their docker-compose (e.g., "check my
 3. **Gitignore migration:** If the user has a `.gitignore` with `twillm-wiki/tiddlywiki.info`, remove that line — it was removed from the canonical gitignore when we switched to the empty-template pattern (keeping `template-wiki/` free of files means there's nothing for `materialiseWiki()` to copy, so no clobbering occurs).
 4. **System tiddlers check:** Verify these required system tiddlers exist in the user's `twillm-wiki/` — if any are missing the setup is from before they were added or they were deleted accidentally:
    - `plugins/markdown-export-routes/` (directory — a local plugin exposing `/markdown/export/*` endpoints)
-   - `tiddlers/$__plugins_bdawg_tw-extras_routes_get-filter-titles.js.tid` (HTTP route for missing-links linting)
    - `tiddlers/$__plugins_cdaven_markdown-export.json` (markdown-export plugin definition)
 
    Copy only the missing items — be surgical, don't overwrite the full directory. Use `rsync` with a dry run first to verify nothing unexpected would change:
@@ -176,7 +174,6 @@ When the user asks to "check" or "upgrade" their docker-compose (e.g., "check my
 
    ```bash
    rsync -avin <skill-scripts>/twillm-wiki/plugins/ ./twillm-wiki/plugins/
-   rsync -avin <skill-scripts>/twillm-wiki/tiddlers/$__plugins_bdawg_tw-extras_routes_get-filter-titles.js.tid ./twillm-wiki/tiddlers/
    ```
 
    If `rsync` is not available, fall back to `cp -a --update=none-fail source dest` which refuses to overwrite existing files — the copy will fail with an error if the destination already exists, rather than silently clobbering it.

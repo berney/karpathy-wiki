@@ -160,7 +160,7 @@ When the user asks a question about the wiki:
 
 Periodically, health-check the wiki:
 
-1. **Broken links:** Use the `[all[missing]!is[shadow]!is[system]]` filter via `filter-titles.json` — see `references/lint-workflows.md` for the full workflow.
+1. **Broken links:** Use the `[all[missing]!is[shadow]!is[system]]` filter via `/bdawg/filter-titles` — see `references/lint-workflows.md` for the full workflow.
 2. **Orphan pages:** Tiddlers with no inbound wikilinks are not necessarily a problem — they may be useful reference pages that simply aren't cross-referenced yet. Only flag them if it makes sense for navigation.
 3. **Missing concepts:** Identify important topics mentioned in multiple tiddlers but lacking their own page.
 4. **Stale claims:** Newer sources may have superseded older claims — flag contradictions between pages.

@@ -101,22 +101,6 @@ The skill has two concerns: **does this title collide** (another tiddler already
 - When checking multiple related titles, make one call per title; the endpoint is fast.
 - If the user explicitly says to create/override a shadow, proceed and note it.
 
-## Fallback: Shadow Detection Without Canonical Plugin
-
-If the canonical-filenames plugin is not available, fall back to TiddlyWiki's built-in filter operators:
-
-```bash
-# Does this title have a shadow? (count only — never fetch [all[shadows]] for a dry-run)
-xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[[MyNewTitle]is[shadow]count[]]'
-# > 0 → shadow exists; reconsider the title or ask the user
-# == 0 → no shadow, safe to create
-
-# Check all shadows starting with a prefix
-xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[all[shadows]prefix[X]count[]]'
-# > 0 → see which ones match:
-xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[all[shadows]prefix[X]]' | jq 'map(.title)'
-```
-
 ## Fixing Non-Canonical Filenames
 
 For the full workflow on fixing non-canonical filenames using `POST /bdawg/canonical`, see `lint-workflows.md`.
@@ -124,7 +108,7 @@ For the full workflow on fixing non-canonical filenames using `POST /bdawg/canon
 To find existing ordinary tiddlers that override a (shadow) tiddler:
 
 ```bash
-xh get http://localhost:$PORT/recipes/default/tiddlers.json 'filter==[is[tiddler]is[shadow]]' | jq -r '.[].title'
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[is[tiddler]is[shadow]]' | jq -r '.[]'
 ```
 
 ### Resolution
