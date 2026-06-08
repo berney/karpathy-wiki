@@ -1,5 +1,5 @@
 /*\
-title: $:/plugins/zzberney/canonical-filenames/get-tiddler-canonical.js
+title: $:/plugins/berney/canonical-filenames/get-tiddler-canonical.js
 type: application/javascript
 module-type: route
 

@@ -1,5 +1,5 @@
 /*\
-title: $:/plugins/zzberney/canonical-filenames/filter-titles.js
+title: $:/plugins/berney/canonical-filenames/filter-titles.js
 type: application/javascript
 module-type: route
 
