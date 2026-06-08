@@ -1,0 +1,136 @@
+Canonical Filenames is a TiddlyWiki server plugin that provides REST API endpoints for looking up and renaming tiddler files on disk to their canonical (sanitised) filenames. Designed to help the LLM write files with the correct name from the start, and to rename existing files to match canonical conventions.
+
+! Endpoints
+
+!! GET /bdawg/canonical
+
+Look up the canonical filename for a tiddler without making changes. Works even for titles that don't exist yet. Takes either ``title`` (single object) or ``filter`` (array):
+
+```
+GET /bdawg/canonical?title=<tiddler-title>[&extension=.md]
+GET /bdawg/canonical?filter=<filter-expression>[&extension=.md]
+GET /bdawg/canonical                          ← defaults to [!is[system]]
+```
+
+* ``title`` — lookup a single tiddler, returns an object
+* ``filter`` — filter mode, returns an array of objects. Defaults to ``[!is[system]]`` when neither ``title`` nor ``filter`` supplied
+* ``extension`` — only applies for non-existing tiddlers (where there's no on-disk file to determine extension from)
+
+Returns the same JSON shape as a single entry in the filter response:
+
+!!! Existing tiddler
+
+```json
+{
+  "exists": true,
+  "isShadow": true/false,
+  "isSystem": true/false,
+  "title": "<tiddler-title>",
+  "filepath": "<current-filename.ext>",
+  "canonical": "<sanitised-filename.ext>",
+  "isCanonical": true/false,
+  "isLooselyCanonical": true/false
+}
+```
+
+!!! Non-existent tiddler
+
+```json
+{
+  "exists": false,
+  "isShadow": true/false,
+  "isSystem": false,
+  "title": "<tiddler-title>",
+  "fileInfo": null,
+  "filepath": null,
+  "canonical": "<sanitised-filename.ext>"
+}
+```
+
+!!! Field meanings
+
+* ``exists`` — ``true`` if the tiddler has a file on disk.
+* ``isShadow`` — ``true`` if the title matches a shadow tiddler (from plugins). Creating an ordinary tiddler with this title would override the shadow.
+* ``isSystem`` — ``true`` for system tiddlers ($:/...).
+* ``isCanonical`` — ``true`` when ``filepath`` already equals ``canonical`` (exact match).
+* ``isLooselyCanonical`` — ``true`` when the current filename matches the canonical name case-insensitively (includes ``isCanonical == true`` cases). Useful for detecting casing-only mismatches.
+* ``canonical`` — always present, relative to the project root. For non-existent titles it is just the basename (e.g. ``My Title.md``), suitable for direct use when writing a new file in the vault directory.
+
+!! GET /bdawg/filter-titles
+
+Returns only tiddler titles matching any TW5 filter expression. See $:/plugins/berney/canonical-filenames/filter-titles for full details.
+
+!! POST /bdawg/canonical
+
+Rename a single tiddler file on disk from its current name to the canonical name. System tiddlers are rejected:
+
+```
+POST /bdawg/canonical?title=<tiddler-title>&strict=false
+```
+
+* ``strict=false`` (default): skips files already at the lowercase version of the canonical name (e.g. ``index.md`` → ``Index.md`` is skipped).
+* ``strict=true``: forces casing normalization as well.
+
+Returns:
+
+```json
+{
+  "title": "<tiddler-title>",
+  "ok": true,
+  "renamed": true,
+  "filepath": "<old-name.ext>",
+  "canonical": "<new-name.ext>"
+}
+```
+
+Or if the tiddler doesn't exist: ``{ ok: false, reason: "..." }``. Or if it's a system tiddler: ``{ skipped: true, reason: "system tiddler" }``.
+
+!! POST /bdawg/canonical/rename-all
+
+Rename all tiddler files on disk. System tiddlers are skipped (not renamed):
+
+```
+POST /bdawg/canonical/rename-all?strict=false
+```
+
+Returns a JSON object with per-tiddler results. System tiddler entries contain ``{ skipped: true, reason: "system tiddler" }``.
+
+! Example Usage
+
+```bash
+# Check if a tiddler needs renaming
+xh get http://localhost:8052/bdawg/canonical title==HelloThere
+
+# Ask what filename a new tiddler should use (no file exists yet)
+xh get http://localhost:8052/bdawg/canonical title=='New Concept'
+
+# Pick a non-default extension
+xh get http://localhost:8052/bdawg/canonical title=='My Page' extension==.tid
+
+# Rename just that file (non-strict by default — skips lowercase matches)
+xh post http://localhost:8052/bdawg/canonical x-requested-with:TiddlyWiki title==HelloThere
+
+# Force strict mode on a single file
+xh post http://localhost:8052/bdawg/canonical x-requested-with:TiddlyWiki title==HelloThere strict==true
+
+# Rename everything non-strict (skips lowercase matches — the default)
+xh post http://localhost:8052/bdawg/canonical/rename-all x-requested-with:TiddlyWiki
+
+# Rename everything in strict mode (fixes casing too)
+xh post http://localhost:8052/bdawg/canonical/rename-all x-requested-with:TiddlyWiki strict==true
+```
+
+```bash
+# Get all non-canonical tiddlers (filter mode default)
+xh get http://localhost:8052/bdawg/canonical | jq '[.[] | select(.isLooselyCanonical | not) | .title]'
+
+# Shadow tiddlers not overridden by stored tiddlers (excluding system)
+xh get http://localhost:8052/bdawg/filter-titles "filter==[all[shadow]!is[tiddler]!is[system]]"
+
+# Missing links
+xh get http://localhost:8052/bdawg/filter-titles "filter==[all[missing]]" | jq -r '.[]'
+```
+
+! Related
+
+* [[KW: Tiddler Title to Filename Mapping Implementation]] — full implementation details of the filename sanitisation pipeline

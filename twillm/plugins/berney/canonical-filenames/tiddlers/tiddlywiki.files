@@ -1,0 +1,38 @@
+{
+	"tiddlers": [
+		{
+			"file": "readme.tid",
+			"fields": {
+				"title": "$:/plugins/berney/canonical-filenames/readme",
+				"type": "text/vnd.tiddlywiki"
+			}
+		},
+		{
+			"file": "filter-titles.md",
+			"fields": {
+				"title": "$:/plugins/berney/canonical-filenames/filter-titles",
+				"type": "text/markdown"
+			}
+		},
+		{
+			"file": "KW_ $_config_OriginalTiddlerPaths.md",
+			"fields": {
+				"title": "KW: $:/config/OriginalTiddlerPaths",
+				"type": "text/markdown",
+				"tags": [ "Concept", "Architecture" ],
+				"created": "2018-06-30T18:03:40Z",
+				"modified": "2026-06-05T14:30:00+10:00"
+			}
+		},
+		{
+			"file": "KW_ Tiddler Title to Filename Mapping Implementation.md",
+			"fields": {
+				"title": "KW: Tiddler Title to Filename Mapping Implementation",
+				"type": "text/markdown",
+				"tags": ["Concept", "Architecture"],
+				"created": "2026-06-05T14:30:00+10:00",
+				"modified": "2026-06-05T15:30:00+10:00"
+			}
+		}
+	]
+}

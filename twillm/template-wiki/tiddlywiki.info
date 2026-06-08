@@ -1,0 +1,19 @@
+{
+	"description": "TWILLM",
+	"plugins": [
+		"tiddlywiki/markdown",
+		"tiddlywiki/tiddlyweb",
+		"tiddlywiki/filesystem",
+		"tiddlywiki/highlight",
+		"tiddlywiki/tour",
+		"tiddlywiki/confetti",
+		"tiddlywiki/dynannotate",
+		"cdaven/markdown-export",
+		"berney/markdown-export-routes",
+		"berney/canonical-filenames"
+	],
+	"themes": [
+		"tiddlywiki/vanilla",
+		"tiddlywiki/snowwhite"
+	]
+}

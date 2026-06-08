@@ -1,0 +1,12 @@
+{
+  "title": "$:/plugins/berney/canonical-filenames",
+  "name": "Canonical Filenames",
+  "description": "REST API routes to look up and rename tiddler files to their canonical (sanitised) filenames",
+  "author": "Berne Campbell",
+  "version": "0.1.0",
+  "license": "BSD-3-Clause",
+  "stability": "STABILITY_1_EXPERIMENTAL",
+  "core-version": ">=5.3.0",
+  "plugin-type": "plugin",
+  "list": "readme"
+}

@@ -24,6 +24,17 @@ EOF
 
 EXPOSE 8080
 
+# Add our suped up cli.js - allows user plugins
+COPY --link /cli.js /app/cli.js
+
+# Our tiddlywiki.info with our extra plugins
+COPY --link /template-wiki/tiddlywiki.info /app/template-wiki/tiddlywiki.info
+
+# Bundle plugins
+#COPY --link /plugins /app/plugins
+# We add our plugins to here, so we don't need TIDDLYWIKI_PLUGIN_PATH env var
+COPY --link /plugins /app/node_modules/tiddlywiki/plugins/
+
 # goss is a statically-linked musl binary — no shared library deps, runs fine even in distroless.
 COPY --link --from=goss /goss /usr/local/bin/goss
 # Putting goss file in /app/ as its the working directory of upstream image
@@ -31,5 +42,6 @@ COPY --link /goss.yaml /app/
 HEALTHCHECK --interval=2s --timeout=5s --retries=10 \
     CMD ["/usr/local/bin/goss", "validate"]
 
+#ENV TIDDLYWIKI_PLUGIN_PATH="/app/plugins"
 ENTRYPOINT ["/app/cli.js"]
 CMD ["--", "--listen", "host=0.0.0.0"]
