@@ -21,7 +21,7 @@ services:
     image: ghcr.io/berney/twillm:latest
     # build: twillm                # Uncomment to build locally from ./twillm/Dockerfile
     ports:
-      - "localhost:8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./vault:/app/vault:Z
       - ./twillm-wiki:/app/twillm-wiki:Z
