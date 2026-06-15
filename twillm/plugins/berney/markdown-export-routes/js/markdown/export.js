@@ -14,11 +14,20 @@ try {
 }
 
 exports.methods = ["GET"];
-exports.path = /^\/markdown\/export\/(.+)$/;
+exports.path = /^\/markdown\/export(\/(.*))?$/;
 exports.info = {priority: 100};
 
 exports.handler = function(request, response, state) {
-	var title = decodeURIComponent(state.params[0]);
+	var title = "";
+	if (state.params[0]) {
+		title = decodeURIComponent(state.params[0]);
+	} else {
+		title = state.queryParameters.title || "";
+	}
+	if (!title) {
+		state.sendResponse(400, {"Content-Type": "text/plain"}, "Missing required 'title' parameter or path segment", "utf8");
+		return;
+	}
 	var tiddler = state.wiki.getTiddler(title);
 	if (!tiddler) {
 		state.sendResponse(404, {"Content-Type": "text/plain"}, "Tiddler not found: " + title, "utf8");
