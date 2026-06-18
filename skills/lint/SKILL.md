@@ -1,5 +1,5 @@
 ---
-name: karpathy-wiki-lint
+name: lint
 description: Periodic health-check of a twillm wiki — broken links, orphans, tag hygiene, non-canonical filenames, and computed views. Use this whenever the user says "lint my wiki", "check for broken links", "find orphan pages", "fix non-canonical filenames", "tag hygiene check", "health check the wiki", or "computed views".
 ---
 

@@ -1,6 +1,6 @@
 ---
-name: karpathy-wiki-setup
-description: How to set up a twillm wiki project from scratch or check/repair existing Docker Compose setup. Creates the vault directory, tiddlywiki.info fixtures, .gitignore, and docker-compose.yml. Use this whenever the user says "set up a wiki", "initialize twillm", "create a wiki vault", "check my docker compose", "upgrade my twillm setup", or "repair broken wiki configuration".
+name: setup
+description: Set up a twillm wiki project — initialize vault, Docker Compose configuration, and system tiddlers. Use this whenever the user says "set up a wiki", "initialize twillm", "create a wiki vault", "check my docker compose", "upgrade my twillm setup", or "repair broken wiki configuration".
 ---
 
 # LLM wiki for twillm — Setup

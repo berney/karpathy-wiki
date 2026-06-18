@@ -1,6 +1,6 @@
 ---
-name: karpathy-wiki-describe
-description: Generate and update description fields in wiki tiddlers via subagent-based batch processing. Use when the user says "describe all", "describe the papers", "describe vault/*.md", "[prefix[Foo:]]", or has a list of file paths to process. Supports --refresh for re-evaluating existing descriptions.
+name: describe
+description: Generate and update description frontmatter for wiki tiddlers using workflow-based batch processing with configurable concurrency. Use this when the user says "describe all", "describe the papers", "describe vault/*.md", "[prefix[Foo:]]", or has a list of file paths to process.
 ---
 
 # LLM wiki — Description Generator

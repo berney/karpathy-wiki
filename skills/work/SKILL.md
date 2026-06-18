@@ -1,5 +1,5 @@
 ---
-name: karpathy-wiki-work
+name: work
 description: Daily twillm wiki operations — ingest sources, curate tiddlers, and query wiki knowledge. Writes focused markdown tiddlers, links them together, updates existing tiddlers as needed. Use this whenever the user says "ingest this paper", "ingest these docs", "what does the wiki say about X", "query the wiki", "rename a tiddler", "curate titles", or has raw sources they want filed into an organized system.
 hooks:
   PreToolUse:
