@@ -24,7 +24,7 @@ hooks:
 
 How to operate a twillm wiki during day-to-day use — ingesting sources, curating tiddlers, and querying knowledge. The LLM reads raw documents, writes focused tiddlers, and cross-references existing tiddlers. Knowledge accumulates over time; each source makes the wiki richer.
 
-Use this whenever the user says "ingest this paper", "ingest these docs", "what does the wiki say about X", "query the wiki", "rename a tiddler", "curate titles", or has raw sources they want filed into an organized system. For project setup and Docker Compose configuration, use `karpathy-wiki-setup`.
+Use this whenever the user says "ingest this paper", "ingest these docs", "what does the wiki say about X", "query the wiki", "rename a tiddler", "curate titles", or has raw sources they want filed into an organized system. For project setup and Docker Compose configuration, use `setup`.
 
 ## Key TiddlyWiki Concepts
 
@@ -114,7 +114,7 @@ See `references/lint-workflows.md` for CamelCase auto-link behavior and suppress
 
 The service is always named `twillm`. The host port is injected below:
 
-Twillm port: !`${CLAUDE_SKILL_DIR}/scripts/docker-port.sh`
+Twillm port: !`docker-port.sh`
 
 Use this number as the host port for all `xh` API calls (replace the port in URLs below), e.g.:
 ```bash

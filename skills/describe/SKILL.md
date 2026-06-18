@@ -11,8 +11,8 @@ Generate and update `description` frontmatter fields across wiki tiddlers using 
 
 | Skill | Role with descriptions |
 |---|---|
-| `karpathy-wiki-work` | Inline — writes description during ingest/edit, already has content. No subagent overhead. |
-| `karpathy-wiki-lint` | Read-only stat — "N tiddlers missing descriptions" during scan phase. Does not write. |
+| `work` | Inline — writes description during ingest/edit, already has content. No subagent overhead. |
+| `lint` | Read-only stat — "N tiddlers missing descriptions" during scan phase. Does not write. |
 
 ## Input Types
 
@@ -129,5 +129,5 @@ If any errors occurred (file read failures, edit conflicts), list them separatel
 
 ## Tips
 
-- **Describe during ingest instead.** If you are creating or editing a tiddler right now via `karpathy-wiki-work`, just write the description inline — the main agent already has the file content and doesn't need a subagent. Use this skill for bulk operations on files not currently in context.
+- **Describe during ingest instead.** If you are creating or editing a tiddler right now via `work`, just write the description inline — the main agent already has the file content and doesn't need a subagent. Use this skill for bulk operations on files not currently in context.
 - **Default concurrency of 2 is optimal for single-GPU setups.** Each background task shares the GPU; too many concurrent tasks slow down each one due to queue contention. Start at 2 and adjust based on observed performance.

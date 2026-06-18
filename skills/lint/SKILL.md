@@ -7,7 +7,7 @@ description: Periodic health-check of a twillm wiki — broken links, orphans, t
 
 Periodic maintenance to keep a twillm wiki clean, connected, and findable. Scans for broken links, tag inconsistencies, non-canonical filenames, and stale claims. Reports findings to the user — never silently changes anything.
 
-Use this whenever the user says "lint my wiki", "check for broken links", "find orphan pages", "fix non-canonical filenames", "tag hygiene check", "health check the wiki", or "computed views". For daily wiki operations (ingestion, querying), use `karpathy-wiki-work`.
+Use this whenever the user says "lint my wiki", "check for broken links", "find orphan pages", "fix non-canonical filenames", "tag hygiene check", "health check the wiki", or "computed views". For daily wiki operations (ingestion, querying), use `work`.
 
 ## Key TiddlyWiki Concepts
 
@@ -91,7 +91,7 @@ Use double-bracket syntax for all inter-tiddler links:
 
 The service is always named `twillm`. The host port is injected below:
 
-Twillm port: !`${CLAUDE_SKILL_DIR}/scripts/docker-port.sh`
+Twillm port: !`docker-port.sh`
 
 Use this number as the host port for all `xh` API calls (replace the port in URLs below), e.g.:
 ```bash

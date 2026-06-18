@@ -7,7 +7,7 @@ description: Set up a twillm wiki project — initialize vault, Docker Compose c
 
 How to set up and operate a twillm wiki — an incremental, compounding knowledge base built from ingested sources. The LLM reads your raw documents and maintains structured, interlinked markdown tiddlers in a twillm vault. This skill handles project initialization, Docker Compose configuration, setup verification, and repair.
 
-Use this whenever the user says "set up a wiki", "initialize twillm", "create a wiki vault", "check my docker compose", "upgrade my twillm setup", or "repair broken wiki configuration". For daily wiki work (ingesting sources, querying, maintaining tiddlers), use `karpathy-wiki-work`.
+Use this whenever the user says "set up a wiki", "initialize twillm", "create a wiki vault", "check my docker compose", "upgrade my twillm setup", or "repair broken wiki configuration". For daily wiki work (ingesting sources, querying, maintaining tiddlers), use `work`.
 
 ## Key TiddlyWiki Concepts
 
