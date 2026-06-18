@@ -1,0 +1,19 @@
+{
+  "name": "karpathy-wiki",
+  "version": "0.1.0",
+  "description": "Skills for managing a twillm wiki — setup, daily operations, health checks, and description generation.",
+  "author": {
+    "name": "Berne Campbell"
+  },
+  "repository": "https://github.com/berney/karpathy-wiki",
+  "license": "MIT",
+  "keywords": ["wiki", "twillm", "skills", "tiddlywiki"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks-codex.json",
+  "interface": {
+    "displayName": "Karpathy Wiki",
+    "shortDescription": "Setup, curate, and maintain a twillm wiki built on TiddlyWiki",
+    "longDescription": "Skills for managing a twillm wiki: initialize projects with Docker Compose, ingest sources into structured tiddlers, run health checks for broken links and tag hygiene, and batch-generate description frontmatter via workflow-based concurrency.",
+    "developerName": "Berne Campbell"
+  }
+}

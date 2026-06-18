@@ -1,0 +1,18 @@
+{
+  "name": "karpathy-wiki",
+  "version": "0.1.0",
+  "description": "Skills for managing a twillm wiki — setup, daily operations, health checks, and description generation.",
+  "author": {
+    "name": "Berne Campbell"
+  },
+  "homepage": "https://github.com/berney/karpathy-wiki",
+  "repository": "https://github.com/berney/karpathy-wiki",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "tiddlywiki",
+    "twillm",
+    "wiki"
+  ],
+  "skills": "./skills/"
+}
