@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# SessionStart hook for karpathy-wiki plugin (Claude Code)
+# No session-wide bootstrap needed — each skill is self-contained.
+
+set -euo pipefail
+
+printf '{"hookSpecificOutput": {"hookEventName": "SessionStart"}}\n' | cat
+exit 0
