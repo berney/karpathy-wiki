@@ -39,6 +39,7 @@ project-root/
 ```markdown
 ---
 title: Transformer
+description: A family of architectures using self-attention mechanisms
 tags: [Concept, Architecture]
 rating: 9
 created: "2026-04-01T12:00:00Z"
@@ -51,6 +52,7 @@ The Transformer is an architecture...
 
 **Frontmatter fields:**
 - `title` (required): The tiddler's logical title — the original, unmapped name. Use Title Case with spaces. **Only one `title:` line should exist.** YAML uses the last value, so duplicate `title:` lines silently overwrite earlier ones and can cause mismatched title-to-filename mappings.
+- `description` (optional): A one-line description of the tiddler's content — additional context that supplements the title with new information, not redundant phrasing. Used by computed index views to surface tiddler meaning at a glance.
 - `tags` (required): YAML array of classification tags. See Tagging Taxonomy below.
 - `rating` (optional): Integer 1–9 reflecting confidence or importance.
 - `created` / `modified` (required): ISO-8601 timestamps — both millisecond UTC (`2026-06-04T10:21:47.840Z`) and timezone offsets (`2026-06-04T12:00:00+10:00`) are fine. Update `modified` on every edit.
@@ -111,7 +113,7 @@ Tiddlers with no inbound wikilinks are not necessarily a problem — they may be
 
 ### 3. Missing Concepts
 
-Identify important topics mentioned in multiple tiddlers but lacking their own page. Look for recurring phrases, repeated concepts across tiddlers that are referenced only by prose, not by wikilinks. This is partly judgment — use domain knowledge from the CLAUDE.md tag taxonomy and index.md to guide what might be missing.
+Identify important topics mentioned in multiple tiddlers but lacking their own page. Look for recurring phrases, repeated concepts across tiddlers that are referenced only by prose, not by wikilinks. This is partly judgment — use domain knowledge from the CLAUDE.md tag taxonomy and the computed views (Concepts.md, Papers.md, etc.) to guide what might be missing.
 
 ### 4. Stale Claims
 
