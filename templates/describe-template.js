@@ -8,17 +8,22 @@ export const meta = {
 
 const FILES = {{FILES}};
 const CONCURRENCY = {{CONCURRENCY}};
-const VAULT_ROOT = '{{VAULT_ROOT}}';
 
 function jobPrompt(file) {
-  return `You are processing a wiki tiddler for description frontmatter generation.
+  return `\
+---
+name: process-description
+tools: [ Read, Edit ]
+---
 
-1. Read the file: ${VAULT_ROOT}/${file}
+You are processing a wiki tiddler for description frontmatter generation.
+
+1. Read the file: ${file}
 2. Evaluate the description state from the frontmatter:
    - MISSING: no \`description:\` line exists → write a one-line summary
    - REDUNDANT: description equals (or closely repeats) the title → replace with a genuine summary
    - GOOD: description is different from title and provides unique info → skip
-3. If update needed, use the Edit tool to add or replace the \`description:\` frontmatter line. Insert it between \`title:\` and \`tags:\` in the frontmatter block. Preserve all other frontmatter fields unchanged. Update \`modified:\` timestamp if present.
+3. If update needed, use the Edit tool to add or replace the \`description:\` frontmatter line. Insert it between \`title:\` and \`tags:\` in the frontmatter block. Preserve all other frontmatter fields unchanged. Do NOT update \`modified:\` timestamp if present.
 4. Return ONLY a JSON object (no markdown fences, no explanation): {"file":"${file}","action":"added"|"updated"|"skipped","description":"<the description text or null if skipped>"}
 
 Description quality rules:
@@ -43,7 +48,7 @@ function dispatch() {
       try {
         let parsed;
         if (typeof r === 'string') {
-          const m = r.match(/\{"file"\s*:\s*"vault\/[^"]+"\s*,\s*"action"\s*:\s*"[^"]+"\s*,\s*"description"\s*:\s*(null|"[^"]*")\}/);
+          const m = r.match(/\{"file"\s*:\s*"[^"]+"\s*,\s*"action"\s*:\s*"[^"]+"\s*,\s*"description"\s*:\s*(null|"[^"]*")\}/);
           if (m) parsed = JSON.parse(m[0]);
         } else {
           parsed = r;

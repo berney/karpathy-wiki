@@ -33,7 +33,7 @@ Multiple invocations with different types are fine. For combining scopes, invoke
 
 Given input, resolve a file list before dispatching:
 
-- **File glob:** shell-expand with `find vault -name '<glob>' -type f` or similar. Files are flat in `vault/`.
+- **File glob:** shell-expand with `find vault -name '<glob>' -type f` or similar. Files may be nested in subdirectories under `vault/`.
 - **TiddlyWiki filter:** pass verbatim to the twillm API's `/bdawg/canonical` endpoint. The response is JSON where each object includes a `filepath` field — extract these with `jq 'map(.filepath)'`. If the call fails, report the error and exit without dispatching.
 - **Explicit list:** validate each path exists with `test -f`. Skip non-existent entries silently and note them in the final report.
 - **Natural language:** infer intent. "describe all" → file glob `vault/*.md`. "the papers" → TiddlyWiki filter `[tag[Paper]]`. "Foo: *.md" → TiddlyWiki filter `[prefix[Foo:]]`.
@@ -42,10 +42,15 @@ After resolution, produce a deduplicated list of relative paths (starting with `
 
 ## Workflow-Based Dispatch
 
-1. **Read the template.** Resolve the template path using `${CLAUDE_SKILL_DIR}/../../templates/describe-template.js` and read its contents with the `Read` tool.
-2. **Substitute placeholders.** Replace three placeholders in the template:
-   - `{{FILES}}` → a JavaScript array literal of the resolved file paths, e.g. `["vault/Transformer.md","vault/Attention.md"]` (no trailing commas, no spaces between elements for compactness)
-   - `{{VAULT_ROOT}}` → the absolute path to the vault root directory (e.g. `/home/user/my-wiki/vault`), with any double quotes in the path escaped as `\"`
+1. **Read the template.** Resolve the template path using `${CLAUDE_PLUGIN_ROOT}/templates/describe-template.js` and read its contents with the `Read` tool.
+2. **Substitute placeholders.** Replace two placeholders in the template:
+   - `{{FILES}}` → a JavaScript array literal of the resolved paths relative to the repo root, one per line, e.g.:
+     ```
+     [
+       "vault/Transformer.md",
+       "vault/paper/Attention.md",
+     ]
+     ```
    - `{{CONCURRENCY}}` → a number (default 2) based on user preference or GPU capacity
 3. **Write the workflow.** Save the filled template to `~/.claude/workflows/describe-{timestamp}.js` where `{timestamp}` is an ISO-8601 timestamp without separators (e.g. `describe-20260618T150000.js`).
 4. **Return a summary.** Report the number of files and concurrency: `"Emitted workflow for 47 files with concurrency=2."`
