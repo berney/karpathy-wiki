@@ -1,0 +1,14 @@
+{
+  "name": "karpathy-wiki-dev",
+  "description": "Development marketplace for karpathy-wiki",
+  "owner": {
+    "name": "Berne Campbell"
+  },
+  "plugins": [
+    {
+      "name": "karpathy-wiki",
+      "description": "Skills for managing a twillm wiki — setup, daily operations, health checks, and description generation.",
+      "source": "./"
+    }
+  ]
+}
