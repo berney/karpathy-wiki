@@ -20,8 +20,8 @@ The caller provides one of:
 
 | Type | Example | Resolution |
 |---|---|---|
-| File glob | `vault/*.md` or `vault/paper*.md` | Shell-expand, flat directory (no subdirectories) |
-| TiddlyWiki filter | `[prefix[Foo:]]` or `[tag[Paper]tag[Concept]]` | Pass verbatim to the twillm API's `/bdawg/canonical` endpoint |
+| File glob | `vault/*.md`, `vault/paper*.md`, or bare `*.md` | Globs always scope to vault/ — never repo root. Extract the basename pattern (strip any directory prefix) and run `find vault -name '<pattern>' -type f`. Files may be nested in subdirectories under vault/. |
+| TiddlyWiki filter | `[prefix[Foo:]]` or `[tag[Paper]tag[Concept]]` | Pass verbatim to the twillm API's `/bdawg/canonical` endpoint. The response is JSON where each object includes a `filepath` field — extract these with `jq 'map(.filepath)'`. If the call fails, report the error and exit without dispatching. |
 | List of filenames | `vault/Transformer.md vault/Attention.md` | Use as-is |
 | Natural language | "describe the papers" or "Foo: *.md" | Infer which type applies |
 
@@ -33,7 +33,7 @@ Multiple invocations with different types are fine. For combining scopes, invoke
 
 Given input, resolve a file list before dispatching:
 
-- **File glob:** shell-expand with `find vault -name '<glob>' -type f` or similar. Files may be nested in subdirectories under `vault/`.
+- **File glob:** if the pattern contains no `/`, prefix it with `vault/` (so `*.md` → `vault/*.md`). Then use `find vault -name '<pattern>' -type f` where `<pattern>` is the original glob *without* any prefix you added — e.g. for `*.md` (which becomes `vault/*.md`) run `find vault -name '*.md' -type f`, not `find vault -name 'vault/*.md'`. Files may be nested in subdirectories under `vault/`.
 - **TiddlyWiki filter:** pass verbatim to the twillm API's `/bdawg/canonical` endpoint. The response is JSON where each object includes a `filepath` field — extract these with `jq 'map(.filepath)'`. If the call fails, report the error and exit without dispatching.
 - **Explicit list:** validate each path exists with `test -f`. Skip non-existent entries silently and note them in the final report.
 - **Natural language:** infer intent. "describe all" → file glob `vault/*.md`. "the papers" → TiddlyWiki filter `[tag[Paper]]`. "`Foo:` tiddlers" → TiddlyWiki filter `[prefix[Foo:]]`.
