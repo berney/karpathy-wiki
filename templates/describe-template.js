@@ -10,27 +10,7 @@ const FILES = {{FILES}};
 const CONCURRENCY = {{CONCURRENCY}};
 
 function jobPrompt(file) {
-  return `\
----
-name: process-description
-tools: [ Read, Edit ]
----
-
-You are processing a wiki tiddler for description frontmatter generation.
-
-1. Read the file: ${file}
-2. Evaluate the description state from the frontmatter:
-   - MISSING: no \`description:\` line exists → write a one-line summary
-   - REDUNDANT: description equals (or closely repeats) the title → replace with a genuine summary
-   - GOOD: description is different from title and provides unique info → skip
-3. If update needed, use the Edit tool to add or replace the \`description:\` frontmatter line. Insert it between \`title:\` and \`tags:\` in the frontmatter block. Preserve all other frontmatter fields unchanged. Do NOT update \`modified:\` timestamp if present.
-4. Return ONLY a JSON object (no markdown fences, no explanation): {"file":"${file}","action":"added"|"updated"|"skipped","description":"<the description text or null if skipped>"}
-
-Description quality rules:
-- One line, max ~256 characters
-- Provides context the title alone does not
-- Does NOT repeat or paraphrase the title
-- Plain prose, no markdown, no wikilinks`;
+  return `Process this file: ${file}`;
 }
 
 // Steady-state dispatch: keep CONCURRENCY agents running at all times
@@ -43,7 +23,7 @@ let added = 0, updated = 0, skipped = 0, errCount = 0;
 function dispatch() {
   if (queue.length === 0) return null;
   const file = queue.shift();
-  return agent(jobPrompt(file), { phase: 'Processing' })
+  return agent(jobPrompt(file), { phase: 'Processing', agentType: 'describe-worker' })
     .then(r => {
       try {
         let parsed;
@@ -65,25 +45,37 @@ function dispatch() {
     .catch(() => { errCount++; });
 }
 
-// Seed
-for (let i = 0; i < Math.min(CONCURRENCY, queue.length); i++) dispatch();
+// True steady-state: keep exactly CONCURRENCY agents inflight at all times.
+// Each agent removes itself when done; a new one fires immediately if queue has work.
+const active = new Set();
 
-// Steady-state: as each Promise resolves, dispatch next
-async function runSteadyState() {
-  // We need to interleave awaits. With a simple while loop + await for each,
-  // the agents finish sequentially which defeats concurrency.
-  // Instead: batch in groups of CONCURRENCY.
-  while (queue.length > 0) {
-    const batch = [];
-    for (let i = 0; i < CONCURRENCY && queue.length > 0; i++) {
-      batch.push(dispatch());
-    }
-    await Promise.all(batch);
-    log(`Progress: ${added + updated + skipped}/${FILES.length} (added:${added} updated:${updated} skipped:${skipped})`);
+function addAgent() {
+  if (queue.length === 0) return;
+  const p = dispatch().finally(() => {
+    active.delete(p);
+    // One free slot → start another to maintain steady-state concurrency
+    runSteadyState__dispatchNext();
+  });
+  active.add(p);
+}
+
+function runSteadyState__dispatchNext() {
+  while (active.size < CONCURRENCY && queue.length > 0) {
+    addAgent();
   }
 }
 
-await runSteadyState();
+runSteadyState__dispatchNext();
+
+// Wait for all agents to finish, logging progress periodically.
+await new Promise(resolve => {
+  function checkDone() {
+    if (active.size === 0) return resolve();
+    log(`Progress: ${added + updated + skipped}/${FILES.length} (added:${added} updated:${updated} skipped:${skipped})`);
+    setTimeout(checkDone, 3000);
+  }
+  checkDone();
+});
 
 log(`Done: ${FILES.length} tiddlers — added ${added}, updated ${updated}, skipped ${skipped}, errors ${errCount}`);
 return { total: FILES.length, added, updated, skipped, errors: errCount };
