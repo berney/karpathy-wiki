@@ -36,24 +36,22 @@ Given input, resolve a file list before dispatching:
 - **File glob:** shell-expand with `find vault -name '<glob>' -type f` or similar. Files may be nested in subdirectories under `vault/`.
 - **TiddlyWiki filter:** pass verbatim to the twillm API's `/bdawg/canonical` endpoint. The response is JSON where each object includes a `filepath` field — extract these with `jq 'map(.filepath)'`. If the call fails, report the error and exit without dispatching.
 - **Explicit list:** validate each path exists with `test -f`. Skip non-existent entries silently and note them in the final report.
-- **Natural language:** infer intent. "describe all" → file glob `vault/*.md`. "the papers" → TiddlyWiki filter `[tag[Paper]]`. "Foo: *.md" → TiddlyWiki filter `[prefix[Foo:]]`.
+- **Natural language:** infer intent. "describe all" → file glob `vault/*.md`. "the papers" → TiddlyWiki filter `[tag[Paper]]`. "`Foo:` tiddlers" → TiddlyWiki filter `[prefix[Foo:]]`.
 
 After resolution, produce a deduplicated list of relative paths (starting with `vault/`). If the list is empty, report that and exit without dispatching.
 
 ## Workflow-Based Dispatch
 
-1. **Read the template.** Resolve the template path using `${CLAUDE_PLUGIN_ROOT}/templates/describe-template.js` and read its contents with the `Read` tool.
-2. **Substitute placeholders.** Replace two placeholders in the template:
-   - `{{FILES}}` → a JavaScript array literal of the resolved paths relative to the repo root, one per line, e.g.:
-     ```
-     [
-       "vault/Transformer.md",
-       "vault/paper/Attention.md",
-     ]
-     ```
-   - `{{CONCURRENCY}}` → a number (default 2) based on user preference or GPU capacity
-3. **Write the workflow.** Save the filled template to `~/.claude/workflows/describe-{timestamp}.js` where `{timestamp}` is an ISO-8601 timestamp without separators (e.g. `describe-20260618T150000.js`).
-4. **Return a summary.** Report the number of files and concurrency: `"Emitted workflow for 47 files with concurrency=2."`
+1. **Resolve targets** to a deduplicated list of relative paths (starting with `vault/`). See **Resolving Targets** above.
+2. **Build the workflow.** Pipe null-delimited paths into `${CLAUDE_SKILL_DIR}/scripts/build-workflow.js`:
+   ```bash
+   find vault -name '*.md' -type f -print0 \
+     | CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT}" node ${CLAUDE_SKILL_DIR}/scripts/build-workflow.js [--concurrency N]
+   ```
+   For TiddlyWiki filters, write the resolved filepath list to a temp file null-delimited and use `cat tmpfile | node ...`.
+3. **Return a summary.** Report what was emitted: `"Emitted workflow for 47 files with concurrency=2."`
+
+The script reads the template from `${CLAUDE_PLUGIN_ROOT}/templates/describe-template.js`, substitutes `{{FILES}}` and `{{CONCURRENCY}}`, and writes the output to `~/.claude/workflows/describe-{timestamp}.js`. Input is newline-delimited by default. For `find -print0` pipelines use the `-0` flag: `find vault ... -print0 | CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT}" node ${CLAUDE_SKILL_DIR}/scripts/build-workflow.js -0`.
 
 ## Description Quality Guidelines
 
