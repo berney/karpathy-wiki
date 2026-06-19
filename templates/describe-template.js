@@ -23,7 +23,7 @@ let added = 0, updated = 0, skipped = 0, errCount = 0;
 function dispatch() {
   if (queue.length === 0) return null;
   const file = queue.shift();
-  return agent(jobPrompt(file), { phase: 'Processing', agentType: 'describe-worker' })
+  return agent(jobPrompt(file), { phase: 'Processing', agentType: 'karpathy-wiki:describe-worker' })
     .then(r => {
       try {
         let parsed;
