@@ -9,6 +9,16 @@ export const meta = {
 const FILES = {{FILES}};
 const CONCURRENCY = {{CONCURRENCY}};
 
+const RESULT_SCHEMA = {
+  type: 'object',
+  required: ['action', 'file'],
+  properties: {
+    action:     { type: 'string', enum: ['added', 'updated', 'skipped'] },
+    file:       { type: 'string' },
+    description:{ type: ['string', 'null'] },
+  },
+};
+
 function jobPrompt(file) {
   return `Process this file: ${file}`;
 }
@@ -23,23 +33,14 @@ let added = 0, updated = 0, skipped = 0, errCount = 0;
 function dispatch() {
   if (queue.length === 0) return null;
   const file = queue.shift();
-  return agent(jobPrompt(file), { phase: 'Processing', agentType: 'karpathy-wiki:describe-worker' })
+  return agent(jobPrompt(file), { phase: 'Processing', agentType: 'karpathy-wiki:describe-worker', schema: RESULT_SCHEMA })
     .then(r => {
-      try {
-        let parsed;
-        if (typeof r === 'string') {
-          const m = r.match(/\{"file"\s*:\s*"[^"]+"\s*,\s*"action"\s*:\s*"[^"]+"\s*,\s*"description"\s*:\s*(null|"[^"]*")\}/);
-          if (m) parsed = JSON.parse(m[0]);
-        } else {
-          parsed = r;
-        }
-        if (parsed && parsed.file) {
-          if (parsed.action === 'added') added++;
-          else if (parsed.action === 'updated') updated++;
-          else if (parsed.action === 'skipped') skipped++;
-          return;
-        }
-      } catch(e) {}
+      if (r && r.file) {
+        if (r.action === 'added') added++;
+        else if (r.action === 'updated') updated++;
+        else if (r.action === 'skipped') skipped++;
+        return;
+      }
       errCount++;
     })
     .catch(() => { errCount++; });

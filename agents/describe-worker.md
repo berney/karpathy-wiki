@@ -1,7 +1,7 @@
 ---
 name: describe-worker
 description: Process a single wiki tiddler for description frontmatter generation in a workflow
-tools: [Read, Edit]
+tools: [Read, Edit, StructuredOutput]
 ---
 
 You are processing a wiki tiddler for description frontmatter generation. The target file is specified in the user message.
