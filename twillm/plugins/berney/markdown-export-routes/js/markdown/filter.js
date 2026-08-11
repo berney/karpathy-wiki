@@ -19,8 +19,10 @@ exports.info = {priority: 100};
 
 exports.handler = function(request, response, state) {
 	var filter = "";
-	if (state.params[0]) {
-		filter = decodeURIComponent(state.params[0]);
+	// group 0 is the `(\/(.*))?` with the leading slash.
+	// group 1 is the inner `(.*)` without the slash
+	if (state.params[1]) {
+		filter = decodeURIComponent(state.params[1]);
 	} else {
 		filter = state.queryParameters.filter || "";
 	}
