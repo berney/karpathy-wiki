@@ -1,5 +1,21 @@
 ARG GOSS_VERSION=0.4.9
 
+# Build stage: Sparse checkout mermaid-tw5 plugin from GitHub
+FROM alpine AS mermaid
+ARG MERMAID_TW5_REF=32e8282dfd070bdd4605ad8ce7015ea87c5db4d0
+RUN <<-EOF
+    set -eux
+    apk add --no-cache git
+    mkdir mermaid-tw5
+    cd mermaid-tw5 || exit 1
+    git init --initial-branch main
+    git remote add origin https://github.com/asophila/mermaid-tw5.git
+    git fetch --depth 1 --filter=blob:none origin "${MERMAID_TW5_REF}"
+    git sparse-checkout set mermaid-tw5/plugins/mermaid-tw5
+    git checkout FETCH_HEAD
+    git switch --create main
+EOF
+
 # Build stage: Download goss and make it executable
 FROM alpine AS goss
 ARG GOSS_VERSION
@@ -30,9 +46,11 @@ COPY --link /cli.js /app/cli.js
 # Our tiddlywiki.info with our extra plugins
 COPY --link /template-wiki/tiddlywiki.info /app/template-wiki/tiddlywiki.info
 
-# Bundle plugins
-#COPY --link /plugins /app/plugins
-# We add our plugins to here, so we don't need TIDDLYWIKI_PLUGIN_PATH env var
+# Bundle plugins from mermaid-tw5 repo (sparse checked out above)
+COPY --link --from=mermaid /mermaid-tw5/mermaid-tw5/plugins/mermaid-tw5 \
+    /app/node_modules/tiddlywiki/plugins/asophila/mermaid-tw5/
+
+# Bundle our own local plugins
 COPY --link /plugins /app/node_modules/tiddlywiki/plugins/
 
 # goss is a statically-linked musl binary — no shared library deps, runs fine even in distroless.

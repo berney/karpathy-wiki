@@ -10,7 +10,8 @@
 		"tiddlywiki/dynannotate",
 		"cdaven/markdown-export",
 		"berney/markdown-export-routes",
-		"berney/canonical-filenames"
+		"berney/canonical-filenames",
+		"asophila/mermaid-tw5"
 	],
 	"themes": [
 		"tiddlywiki/vanilla",
