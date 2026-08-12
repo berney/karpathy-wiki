@@ -98,6 +98,8 @@ If any errors occurred (file read failures, edit conflicts), list them separatel
 
 * After Workflow-Based Dispatch and Reporting steps, offer to the user to remove the `~/.claude/workflows/describe-{timestamp}.js` file you just created.
 
+Note: the `/describe-workflow` slash command will still show up afer deleting the file, until the user runs `/reload-skills`.
+
 ### Background
 This skill programmatically generates Claude code Dynamic Workflows.
 These are in the `~/.claude/workflows/` directory (files named like `describe-<timestamp>.js`) and show up as slash commands (ex: `/describe-workflow`) and as skills (despite not being skills) in:
