@@ -92,3 +92,19 @@ If any errors occurred (file read failures, edit conflicts), list them separatel
 
 - **Describe during ingest instead.** If you are creating or editing a tiddler right now via `work`, just write the description inline — the main agent already has the file content and doesn't need a workflow. Use this skill for bulk operations on files not currently in context.
 - **Default concurrency of 2 is optimal for single-GPU setups.** Each background task shares the GPU; too many concurrent tasks slow down each one due to queue contention. Start at 2 and adjust based on observed performance.
+
+
+## Cleanup
+
+* After Workflow-Based Dispatch and Reporting steps, offer to the user to remove the `~/.claude/workflows/describe-{timestamp}.js` file you just created.
+
+### Background
+This skill programmatically generates Claude code Dynamic Workflows.
+These are in the `~/.claude/workflows/` directory (files named like `describe-<timestamp>.js`) and show up as slash commands (ex: `/describe-workflow`) and as skills (despite not being skills) in:
+
+* Listed in `/skills` command.
+* Listed in the *skills* tab of `/plugin` (aliases `/plugins`, `/marketplace`) command.
+
+Showing up in the above as "skills" can be confusing for the user.
+Especially if time passes and the plugin (this skill) has been uninstalled, the workflow files, if they still exist, will still show up.
+For this reason the template names the workflows `describe-workflow`, clearly identifying it as a workflow, and a distinct name from this skill (`describe`).
