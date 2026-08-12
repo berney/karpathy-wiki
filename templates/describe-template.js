@@ -1,6 +1,6 @@
 export const meta = {
-  name: 'describe',
-  description: 'Generate or update description frontmatter for wiki tiddlers',
+  name: 'describe-workflow',
+  description: 'Programmatically generated workflow to create or update description frontmatter for wiki tiddlers',
   phases: [
     { title: 'Processing' },
   ],
