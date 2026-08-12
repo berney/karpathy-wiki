@@ -4,7 +4,7 @@ type: application/javascript
 module-type: route
 
 GET /bdawg/canonical?title=<tiddler-title>[&extension=.md]
-  Returns {exists, isSystem, isShadow, title, fileInfo, filepath, canonical, isCanonical, isLooselyCanonical, tags}
+  Returns {exists, isSystem, isShadow, title, description, fileInfo, filepath, canonical, isCanonical, isLooselyCanonical, tags}
   For existing tiddlers: all fields populated.
   For non-existent: exists=false, only title + canonical are set (fileInfo/filepath/null).
 
@@ -13,7 +13,7 @@ GET /bdawg/canonical?filename=<tiddler-filename.ext>
   Returns the same fields as the title variant. Returns 404 if not found.
 
 GET /bdawg/canonical?filter=<filter>[&extension=.md]
-  Returns [{exists, isSystem, isShadow, title, fileInfo, filepath, canonical, isCanonical, isLooselyCanonical}]
+  Returns [{exists, isSystem, isShadow, title, description, fileInfo, filepath, canonical, isCanonical, isLooselyCanonical, tags}]
   for every tiddler matching the filter. Defaults to [!is[system]] if neither `title` nor `filter` supplied.
   `extension` only applies for non-existing tiddlers (where there's no on-disk file to determine extension from).
 
@@ -76,7 +76,7 @@ function lookupTitleByFilename(filename) {
 
 /**
  * Compute canonical file info for an EXISTING tiddler.
- * Returns { ok, existingFileInfo, canonicalFileInfo, tags } or { ok: false, reason }.
+ * Returns { ok, existingFileInfo, canonicalFileInfo, tags, description } or { ok: false, reason }.
  */
 function lookupExisting(title, wiki) {
   var existingFileInfo = $tw.boot.files[title] || null;
@@ -96,7 +96,8 @@ function lookupExisting(title, wiki) {
     fileInfo: {overwrite: true}
   });
 
-  return {ok: true, existingFileInfo, canonicalFileInfo, tags: tiddler.getFieldList('tags')};
+  var fields = tiddler.fields || {};
+  return {ok: true, existingFileInfo, canonicalFileInfo, tags: fields.tags, description: fields.description};
 }
 
 /**
@@ -166,6 +167,7 @@ function buildResponse(state, title, info, extension) {
     return {
       exists: true,
       title: title,
+      description: info.description,
       fileInfo: info.existingFileInfo,
       filepath: resolveRelative(info.existingFileInfo.filepath),
       canonical: resolveRelative(info.canonicalFileInfo.filepath),
@@ -181,6 +183,7 @@ function buildResponse(state, title, info, extension) {
       isShadow: state.wiki.isShadowTiddler(title),
       isSystem: state.wiki.isSystemTiddler(title),
       title: title,
+      description: null,
       fileInfo: null,
       filepath: null,
       canonical: path.basename(computeCanonicalPath(title, extension || ".md")),
