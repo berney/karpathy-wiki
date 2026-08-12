@@ -4,9 +4,13 @@ type: application/javascript
 module-type: route
 
 GET /bdawg/canonical?title=<tiddler-title>[&extension=.md]
-  Returns {exists, isSystem, isShadow, title, fileInfo, filepath, canonical, isCanonical, isLooselyCanonical}
+  Returns {exists, isSystem, isShadow, title, fileInfo, filepath, canonical, isCanonical, isLooselyCanonical, tags}
   For existing tiddlers: all fields populated.
   For non-existent: exists=false, only title + canonical are set (fileInfo/filepath/null).
+
+GET /bdawg/canonical?filename=<tiddler-filename.ext>
+  Looks up a tiddler by its on-disk filename (basename or relative path).
+  Returns the same fields as the title variant. Returns 404 if not found.
 
 GET /bdawg/canonical?filter=<filter>[&extension=.md]
   Returns [{exists, isSystem, isShadow, title, fileInfo, filepath, canonical, isCanonical, isLooselyCanonical}]
@@ -53,8 +57,26 @@ function resolveDirectory(existingFileInfo) {
 }
 
 /**
+ * Reverse-lookup a tiddler title by its on-disk filename (basename or relative path).
+ * Returns the title string or null.
+ */
+function lookupTitleByFilename(filename) {
+  var titles = Object.keys($tw.boot.files);
+  for (var i = 0; i < titles.length; i++) {
+    var t = titles[i];
+    var fi = $tw.boot.files[t];
+    if (!fi || !fi.filepath) continue;
+    var rel = resolveRelative(fi.filepath);
+    if (rel === filename || path.basename(rel) === filename) {
+      return t;
+    }
+  }
+  return null;
+}
+
+/**
  * Compute canonical file info for an EXISTING tiddler.
- * Returns { ok, existingFileInfo, canonicalFileInfo } or { ok: false, reason }.
+ * Returns { ok, existingFileInfo, canonicalFileInfo, tags } or { ok: false, reason }.
  */
 function lookupExisting(title, wiki) {
   var existingFileInfo = $tw.boot.files[title] || null;
@@ -74,7 +96,7 @@ function lookupExisting(title, wiki) {
     fileInfo: {overwrite: true}
   });
 
-  return {ok: true, existingFileInfo, canonicalFileInfo};
+  return {ok: true, existingFileInfo, canonicalFileInfo, tags: tiddler.getFieldList('tags')};
 }
 
 /**
@@ -150,7 +172,8 @@ function buildResponse(state, title, info, extension) {
       isCanonical: info.existingFileInfo.filepath === info.canonicalFileInfo.filepath,
       isLooselyCanonical: info.existingFileInfo.filepath.toLowerCase() === info.canonicalFileInfo.filepath.toLowerCase(),
       isShadow: state.wiki.isShadowTiddler(title),
-      isSystem: state.wiki.isSystemTiddler(title)
+      isSystem: state.wiki.isSystemTiddler(title),
+      tags: info.tags || []
     };
   } else {
     return {
@@ -160,19 +183,31 @@ function buildResponse(state, title, info, extension) {
       title: title,
       fileInfo: null,
       filepath: null,
-      canonical: path.basename(computeCanonicalPath(title, extension || ".md"))
+      canonical: path.basename(computeCanonicalPath(title, extension || ".md")),
+      tags: []
     };
   }
 }
 
 exports.handler = function(request, response, state) {
   var title = state.queryParameters.title;
+  var filename = state.queryParameters.filename;
   var isRenameAll = (state.urlInfo.pathname === "/bdawg/canonical/rename-all");
 
   // GET /bdawg/canonical — lookup only (supports non-existent titles and filtering)
   if (request.method === "GET") {
     var extension = state.queryParameters.extension;
     var filter = state.queryParameters.filter;
+
+    // Resolve filename → title if provided instead of title
+    if (title === undefined && filename !== undefined) {
+      var resolved = lookupTitleByFilename(filename);
+      if (!resolved) {
+        response.writeHead(404, {"Content-Type": "application/json"});
+        return response.end(JSON.stringify({error: "Tiddler not found for filename: " + filename}));
+      }
+      title = resolved;
+    }
 
     if (!title && !filter) {
       filter = "[!is[system]]";

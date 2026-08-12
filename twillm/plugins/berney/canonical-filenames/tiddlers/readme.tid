@@ -4,16 +4,18 @@ Canonical Filenames is a TiddlyWiki server plugin that provides REST API endpoin
 
 !! GET /bdawg/canonical
 
-Look up the canonical filename for a tiddler without making changes. Works even for titles that don't exist yet. Takes either ``title`` (single object) or ``filter`` (array):
+Look up the canonical filename for a tiddler without making changes. Works even for titles that don't exist yet. Takes either ``title`` (single object), ``filename``, or ``filter`` (array):
 
 ```
 GET /bdawg/canonical?title=<tiddler-title>[&extension=.md]
+GET /bdawg/canonical?filename=<tiddler-filename.ext>
 GET /bdawg/canonical?filter=<filter-expression>[&extension=.md]
 GET /bdawg/canonical                          ← defaults to [!is[system]]
 ```
 
-* ``title`` — lookup a single tiddler, returns an object
-* ``filter`` — filter mode, returns an array of objects. Defaults to ``[!is[system]]`` when neither ``title`` nor ``filter`` supplied
+* ``title`` — lookup a single tiddler by title, returns an object
+* ``filename`` — lookup a single tiddler by its on-disk filename (basename or relative path), returns an object. Returns 404 if not found.
+* ``filter`` — filter mode, returns an array of objects. Defaults to ``[!is[system]]`` when neither ``title``, ``filename``, nor ``filter`` supplied
 * ``extension`` — only applies for non-existing tiddlers (where there's no on-disk file to determine extension from)
 
 Returns the same JSON shape as a single entry in the filter response:
@@ -29,7 +31,8 @@ Returns the same JSON shape as a single entry in the filter response:
   "filepath": "<current-filename.ext>",
   "canonical": "<sanitised-filename.ext>",
   "isCanonical": true/false,
-  "isLooselyCanonical": true/false
+  "isLooselyCanonical": true/false,
+  "tags": ["tag1", "multi word tag"]
 }
 ```
 
@@ -43,7 +46,8 @@ Returns the same JSON shape as a single entry in the filter response:
   "title": "<tiddler-title>",
   "fileInfo": null,
   "filepath": null,
-  "canonical": "<sanitised-filename.ext>"
+  "canonical": "<sanitised-filename.ext>",
+  "tags": []
 }
 ```
 
@@ -55,6 +59,7 @@ Returns the same JSON shape as a single entry in the filter response:
 * ``isCanonical`` — ``true`` when ``filepath`` already equals ``canonical`` (exact match).
 * ``isLooselyCanonical`` — ``true`` when the current filename matches the canonical name case-insensitively (includes ``isCanonical == true`` cases). Useful for detecting casing-only mismatches.
 * ``canonical`` — always present, relative to the project root. For non-existent titles it is just the basename (e.g. ``My Title.md``), suitable for direct use when writing a new file in the vault directory.
+* ``tags`` — array of tags parsed from the tiddler's ``tags`` field. Multi-word tags are preserved as-is.
 
 !! GET /bdawg/filter-titles
 
@@ -100,6 +105,9 @@ Returns a JSON object with per-tiddler results. System tiddler entries contain `
 ```bash
 # Check if a tiddler needs renaming
 xh get http://localhost:8052/bdawg/canonical title==HelloThere
+
+# Look up by filename (returns 404 if not found)
+xh get http://localhost:8052/bdawg/canonical filename==hello-world.md
 
 # Ask what filename a new tiddler should use (no file exists yet)
 xh get http://localhost:8052/bdawg/canonical title=='New Concept'
