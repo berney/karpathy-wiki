@@ -103,6 +103,7 @@ See `references/lint-workflows.md` for CamelCase auto-link behavior and suppress
 | `Paper` | Academic papers (author-year named) |
 | `Entity` | People, organizations, datasets, tools |
 | `Source` | The source document itself (auto-generated from ingest) |
+| `Index` | Computed views — dynamic index tiddlers that list other tiddlers by tag |
 
 **Rules:**
 - Every tiddler must have tags. Minimum one tag.
