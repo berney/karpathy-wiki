@@ -159,3 +159,18 @@ For interactive views, create TiddlyWiki wikitext tiddlers with `.tid` extension
 - **Don't over-flag orphans.** Many reference pages (e.g., a "Getting Started" tiddler) are useful even if nothing links to them.
 - **Tag hygiene is low effort, high reward.** A quick pass catches typos and inconsistencies that compound over time.
 - **Use `xh` not `curl`.** Always use `xh` for HTTP requests when making API calls. If `xh` is not installed, ask the user rather than falling back to `curl` — `xh`'s syntax differs and a direct replacement can introduce subtle bugs (e.g., header quoting, JSON encoding).
+
+
+## SKILL.md Debugging
+If the user is asking to debug the skill, here's some details to help.
+
+### Variables
+* The skill arguments `ARGUMENTS` is: "${ARGUMENTS}".
+* The first argument is `ARGUMENTS[0]` is: "${ARGUMENTS[0]}".
+  * This is also arg 0: "$0" (alternative syntax: "${0}").
+* The claude session id `CLAUDE_SESSION_ID` is: "${CLAUDE_SESSION_ID}".
+* The current effort level `CLAUDE_EFFORT` is: "${CLAUDE_EFFORT}".
+* The skill directory `CLAUDE_SKILL_DIR` is: "${CLAUDE_SKILL_DIR}".
+* The project directory `CLAUDE_PROJECT_DIR` is: "${CLAUDE_PROJECT_DIR}".
+* The plugin root `CLAUDE_PLUGIN_ROOT` is: "${CLAUDE_PLUGIN_ROOT}".
+* The plugin persistent data directory `CLAUDE_PLUGIN_DATA` is: "${CLAUDE_PLUGIN_DATA}".
