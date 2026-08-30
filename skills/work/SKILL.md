@@ -80,6 +80,8 @@ The Transformer is an architecture...
 
 The canonical-filenames plugin (exposing `GET /bdawg/canonical`) handles title-to-filename mapping automatically. Before creating any tiddler, call this endpoint to get the correct `canonical` filename — never guess from the title yourself. The `title:` frontmatter value always uses the original, human-readable title; the filename uses the plugin's sanitised mapping.
 
+The same endpoint also supports reverse lookup via `filename==` (e.g., `filename==hello-world.md`) to look up a tiddler by its on-disk filename. This returns the full metadata including `tags` as a JSON array — see `references/checking-tiddlers.md#Reverse-Lookup-by-Filename`.
+
 ### Wikilinks — how tiddlers connect
 
 Use double-bracket syntax for all inter-tiddler links:
