@@ -1,0 +1,14 @@
+created: 20260813042429505
+modified: 20260813043310911
+tags: Template
+title: Index Filter Template
+type: text/vnd.tiddlywiki
+
+\parameters (filter:"[tag[Topic]]")
+
+<ul>
+    <$list filter=`[subfilter<filter>!<currentTiddler>]` >
+        <$list-template><li><$link/> --- {{!!description}}</li></$list-template>
+        <$list-empty>None!</$list-empty>
+    </$list>
+</ul>
