@@ -1,11 +1,11 @@
 ---
 name: describe
-description: Generate and update description frontmatter for wiki tiddlers using workflow-based batch processing with configurable concurrency. Use this when the user says "describe all", "describe the papers", "describe vault/*.md", "[prefix[Foo:]]", or has a list of file paths to process.
+description: Create and/or update description frontmatter for wiki tiddlers using workflow-based batch processing with configurable concurrency. Use this when the user says "describe all", "describe the papers", "describe vault/*.md", "[prefix[Foo:]]", or has a list of file paths to process.
 ---
 
 # LLM wiki — Description Generator
 
-Generate and update `description` frontmatter fields across wiki tiddlers using workflow-based batch processing with configurable concurrency. The main agent resolves input to file paths, fills a reusable workflow template, and emits the completed workflow for the harness to execute. Each subagent within the workflow handles one file in isolation — no cross-file context pollution, even when processing hundreds of files.
+Create and/or update `description` frontmatter fields across wiki tiddlers using workflow-based batch processing with configurable concurrency. The main agent resolves input to file paths, fills a reusable workflow template, and emits the completed workflow for the harness to execute. Each subagent within the workflow handles one file in isolation — no cross-file context pollution, even when processing hundreds of files.
 
 **Related skills:**
 
@@ -20,7 +20,7 @@ The caller provides one of:
 
 | Type | Example | Resolution |
 |---|---|---|
-| File glob | `vault/*.md`, `vault/paper*.md`, or bare `*.md` | Globs always scope to vault/ — never repo root. Extract the basename pattern (strip any directory prefix) and run `find vault -name '<pattern>' -type f`. Files may be nested in subdirectories under vault/. |
+| File glob | `vault/*.md`, `vault/paper*.md`, or bare `*.md` | Globs always scope to `vault/` — never repo root. Extract the basename pattern (strip any directory prefix) and run `find vault -name '<pattern>' -type f`. Files may be nested in subdirectories under `vault/`. |
 | TiddlyWiki filter | `[prefix[Foo:]]` or `[tag[Paper]tag[Concept]]` | Pass verbatim to the twillm API's `/bdawg/canonical` endpoint |
 | List of filenames | `vault/Transformer.md vault/Attention.md` | Use as-is |
 | Natural language | "describe the papers" or "Foo: *.md" | Infer which type applies |
@@ -33,8 +33,8 @@ Multiple invocations with different types are fine. For combining scopes, invoke
 
 Given input, resolve a file list before dispatching:
 
-- **File glob:** Globs always scope to vault/ — never repo root. Extract the basename pattern (everything after the last `/`, or the whole thing if there's no `/`). Run `find vault -name '<pattern>' -type f` where `<pattern>` is the basename. Files may be nested in subdirectories under `vault/`.
-- **TiddlyWiki filter:** pass verbatim to the twillm API's `/bdawg/canonical` endpoint. The response is JSON where each object includes a `filepath` field — extract these with `jq 'map(.filepath)'`. If the call fails, report the error and exit without dispatching.
+- **File glob:** Globs always scope to `vault/` — never repo root. Extract the basename pattern (everything after the last `/`, or the whole thing if there's no `/`). Run `find vault -name '<pattern>' -type f` where `<pattern>` is the basename. Files may be nested in subdirectories under `vault/`.
+- **TiddlyWiki filter:** pass verbatim to the twillm API's `/bdawg/canonical` endpoint. The response is JSON where each object includes a `filepath` field — extract these with `jq 'map(.filepath)'`. If the call fails, report the error and exit without dispatching. An empty list (`[]`) means nothing matched the filter.
 - **Explicit list:** validate each path exists with `test -f`. Skip non-existent entries silently and note them in the final report.
 - **Natural language:** infer intent. "describe all" → file glob `vault/*.md`. "the papers" → TiddlyWiki filter `[tag[Paper]]`. "`Foo:` tiddlers" → TiddlyWiki filter `[prefix[Foo:]]`.
 
