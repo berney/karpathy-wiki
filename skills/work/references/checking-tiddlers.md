@@ -11,6 +11,17 @@ The canonical-filenames plugin provides a single REST endpoint that answers ever
 xh get http://localhost:$PORT/bdawg/canonical title==MyNewTitle
 ```
 
+### Reverse Lookup by Filename
+
+The endpoint also accepts `filename==` to look up a tiddler by its on-disk filename (basename or relative path). This is useful when you already have a file path and need the tiddler's metadata — particularly `tags`, which are returned as a proper JSON array:
+
+```bash
+# Look up by filename — returns 404 if not found
+xh get http://localhost:$PORT/bdawg/canonical filename==hello-world.md | jq '{title, tags}'
+```
+
+The response shape is the same as the title variant. Returns 404 if no tiddler file matches the given filename.
+
 ### Field semantics (what the JSON means)
 
 | Field | `true` means |

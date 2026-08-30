@@ -104,8 +104,11 @@ This returns all non-system tiddlers and filters for those whose filename doesn'
 **Fix a single file:**
 
 ```bash
-# Non-strict (default — skips casing-only mismatches like log.md → Log.md)
+# By title — non-strict (default — skips casing-only mismatches like log.md → Log.md)
 xh post http://localhost:$PORT/bdawg/canonical x-requested-with:TiddlyWiki title=='Foo: Widgets'
+
+# By filename — same POST, just use filename== instead of title==
+xh post http://localhost:$PORT/bdawg/canonical x-requested-with:TiddlyWiki filename==foo-widgets.md
 ```
 
 **Fix all files in the vault:**
