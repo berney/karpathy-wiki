@@ -1,6 +1,23 @@
 ---
 name: describe
 description: Create and/or update description frontmatter for wiki tiddlers using workflow-based batch processing with configurable concurrency. Use this when the user says "describe all", "describe the papers", "describe vault/*.md", "[prefix[Foo:]]", or has a list of file paths to process.
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          if: "Bash(curl *)"
+          command: |
+            COMMAND=$(jq -r '.tool_input.command' < /dev/stdin)
+            jq -n \
+              --arg cmd "$COMMAND" \
+              '{
+                hookSpecificOutput: {
+                  hookEventName: "PreToolUse",
+                  permissionDecision: "deny",
+                  permissionDecisionReason: ("curl is banned — use xh or a bundled script instead. Command: " + $cmd)
+                }
+              }'
 ---
 
 # LLM wiki — Description Generator

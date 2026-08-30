@@ -1,6 +1,24 @@
 ---
 name: lint
 description: Periodic health-check of a twillm wiki — broken links, orphans, tag hygiene, non-canonical filenames, and computed views. Use this whenever the user says "lint my wiki", "check for broken links", "find orphan pages", "fix non-canonical filenames", "tag hygiene check", "health check the wiki", or "computed views".
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          if: "Bash(curl *)"
+          command: |
+            COMMAND=$(jq -r '.tool_input.command' < /dev/stdin)
+            echo "blocked: $COMMAND" >> /tmp/bdawg-claude-skill-lint-blocked.log
+            jq -n \
+              --arg cmd "$COMMAND" \
+              '{
+                hookSpecificOutput: {
+                  hookEventName: "PreToolUse",
+                  permissionDecision: "deny",
+                  permissionDecisionReason: ("curl is banned — use xh or a bundled script instead. Command: " + $cmd)
+                }
+              }'
 ---
 
 # LLM wiki for twillm — Health Checks

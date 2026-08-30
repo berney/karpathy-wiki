@@ -1,6 +1,23 @@
 ---
 name: setup
 description: Set up a twillm wiki project — initialize vault, Docker Compose configuration, and system tiddlers. Use this whenever the user says "set up a wiki", "initialize twillm", "create a wiki vault", "check my docker compose", "upgrade my twillm setup", or "repair broken wiki configuration".
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          if: "Bash(curl *)"
+          command: |
+            COMMAND=$(jq -r '.tool_input.command' < /dev/stdin)
+            jq -n \
+              --arg cmd "$COMMAND" \
+              '{
+                hookSpecificOutput: {
+                  hookEventName: "PreToolUse",
+                  permissionDecision: "deny",
+                  permissionDecisionReason: ("curl is banned — use xh or a bundled script instead. Command: " + $cmd)
+                }
+              }'
 ---
 
 # LLM wiki for twillm — Setup
