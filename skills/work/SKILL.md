@@ -169,6 +169,63 @@ When the user asks a question about the wiki:
 3. **Synthesize an answer** citing specific tiddlers (use `[[Tiddler Name]]` links so the user can click through).
 4. **File useful discoveries.** If the query reveals a new insight, comparison, or connection worth keeping, create a new tiddler for it.
 
+### Create Index
+
+To create a computed view that lists all tiddlers matching a tag, use the **Index Template** pattern. This creates a lightweight `.tid` file that renders dynamically — no manual maintenance needed.
+
+1. **Decide the tag and name.** E.g., tag `MCP`, index title "MCP Index".
+2. **Create a `.tid` file** in `vault/` (or wherever your vault tiddlers live):
+
+   ```
+   created: 20260813000000000
+   modified: 20260813000000000
+   tags: MCP Index
+   title: MCP Index
+
+   {{||Index Template|MCP}}
+   ```
+
+   The syntax is `{{|Index Template|<TAG>}}` — this is transclusion the current tiddler through the `Index Template` template tiddler and passing the `<TAG>` as a parameter. This is substituted using `$(tag)$` in the template's filter, so `[tag[$(tag)$]]` resolves to `[tag[MCP]]`.
+   The template tiddler filters `<currentTiddler>` from the result - so this excludes the tiddler `MCP Index` even though it is tagged `MCP`.
+
+3. **The rendered output** is a bullet list: each matching tiddler appears as `<title> --- <description>`, using the `description` frontmatter field from each tiddler.
+
+**Where to put it:**
+- Vault-side computed views go in `vault/` as `.tid` files (side by side with `.md` tiddlers).
+- System-level dashboards go in `twillm-wiki/tiddlers/`.
+
+**Example:** To create an index of all `Paper`-tagged tiddlers:
+
+```
+created: 20260813000000000
+modified: 20260813000000000
+tags: Paper Index
+title: Paper Index
+
+{{||Index Template|Paper}}
+```
+
+Because the transclusion passes a parameter, a single tiddler can use it multiple times. For example:
+
+```
+created: 20260813000000000
+modified: 20260813000000000
+tags: Index
+title: Index
+
+! Topics
+{{||Index Template|Topic}}
+
+! Concepts
+{{||Index Template|Concept}}
+
+! Papers
+{{||Index Template|Paper}}
+```
+
+This creates a tiddler titled `Index` tagged `Index` that has 3 headings (`Topics`, `Concepts`, `Papers`) that each contain bulletpoint `<title> --- <description>` entries based on the corresponding tag.
+
+
 ## Tips
 
 - **Atomic tiddlers > monolithic pages.** One concept per file. It's better to have 20 short tiddlers with links than one long document with sections. A human reader should be able to open just the pieces relevant to them.
