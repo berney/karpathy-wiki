@@ -118,7 +118,7 @@ Twillm port: !`docker-port.sh`
 
 Use this number as the host port for all `xh` API calls (replace the port in URLs below), e.g.:
 ```bash
-xh get http://localhost/TWILLM_PORT/bdawg/canonical title==MyTitle
+xh get http://localhost:TWILLM_PORT/bdawg/canonical title==MyTitle
 ```
 If blank, the container isn't running or there's a compose issue — run `docker compose up -d` and retry the skill.
 
