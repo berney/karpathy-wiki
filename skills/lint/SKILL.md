@@ -20,7 +20,7 @@ Use this whenever the user says "lint my wiki", "check for broken links", "find 
 ## Project Structure
 
 ```
-project-root/
+${CLAUDE_PROJECT_DIR}/
   vault/                 ← Hand-written tiddlers — where lint scans live
     *.md                 ← Markdown tiddlers
     *.tid                ← TiddlyWiki wikitext UI tiddlers (computed views)

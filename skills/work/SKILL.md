@@ -38,7 +38,7 @@ Use this whenever the user says "ingest this paper", "ingest these docs", "what 
 ## Project Structure
 
 ```
-project-root/
+${CLAUDE_PROJECT_DIR}/
   CLAUDE.md              ← Agent instructions for this vault
   vault/                 ← Hand-written tiddlers — what you create and edit
     *.md                 ← Markdown tiddlers

@@ -22,7 +22,7 @@ Use this whenever the user says "set up a wiki", "initialize twillm", "create a 
 ## Project Structure
 
 ```
-project-root/
+${CLAUDE_PROJECT_DIR}/
   CLAUDE.md              ← Agent instructions for this vault (not served as a wiki page)
   vault/                 ← The twillm vault — flat directory of tiddler files
     *.md                 ← Markdown tiddlers (ordinary tiddlers)
