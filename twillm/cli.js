@@ -188,8 +188,8 @@ function resolvePluginFolder(packageName,subpath) {
 }
 
 const bundledPlugins = [
-	resolvePluginFolder("tw5-graph","plugins/graph"),
-	resolvePluginFolder("tw5-vis-network","plugins/vis-network")
+	//resolvePluginFolder("tw5-graph","plugins/graph"),
+	//resolvePluginFolder("tw5-vis-network","plugins/vis-network")
 ].filter(Boolean).map((p) => "++" + p);
 
 // Combine bundled plugins with user-specified +/++ args.
