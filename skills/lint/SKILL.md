@@ -122,6 +122,17 @@ Newer sources may have superseded older claims — flag contradictions between p
 
 ### 5. Tag Hygiene
 
+Get each tiddler's tags via the REST endpoint rather than grepping YAML frontmatter — the canonical-filenames plugin returns `tags` as a proper JSON array, handling multi-word tags correctly:
+
+```bash
+# Get tags for a single file by filename
+xh get http://localhost:$PORT/bdawg/canonical filename==hello-world.md | jq '.tags'
+# → ["Concept", "foo bar"]
+
+# Get all tiddlers with their tags (filter mode)
+xh get http://localhost:$PORT/bdawg/canonical | jq 'map({title, tags})'
+```
+
 Check for inconsistent tags:
 - Plural vs singular (e.g., `concepts` vs `Concept`)
 - Tags that should be `Topic` vs `Concept` (check tag taxonomy)
