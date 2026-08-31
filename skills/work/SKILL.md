@@ -127,15 +127,15 @@ See `references/lint-workflows.md` for CamelCase auto-link behavior and suppress
 
 ## Docker Port
 
-The service is always named `twillm`. The host port is injected below:
+The service is always named `twillm`. The output below is either a host port number (e.g. "8051") or a base URL (e.g. "http://twillm:8080"):
 
 Twillm port: !`docker-port.sh`
 
-Use this number as the host port for all `xh` API calls (replace the port in URLs below), e.g.:
+Use the output as the host for all `xh` API calls (replace the port or URL in URLs below). If it's a port number, use `http://localhost:<PORT>`. If it's already a URL, use it directly:
 ```bash
 xh get http://localhost:TWILLM_PORT/bdawg/canonical title==MyTitle
 ```
-If blank, the container isn't running or there's a compose issue — run `docker compose up -d` and retry the skill.
+If the output is `UNKNOWN`, neither docker/podman nor a container runtime is available and the container is not reachable — ensure `docker compose up -d` or equivalent is running.
 
 ## Operations
 
