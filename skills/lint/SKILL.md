@@ -110,9 +110,7 @@ Use double-bracket syntax for all inter-tiddler links:
 
 The service is always named `twillm`. The output below is either a host port number (e.g. "8051") or a base URL (e.g. "http://twillm:8080"):
 
-Twillm port: !`docker-port.sh`
-If you see a literal `docker-port.sh` on the preceding line, dynamic context injection isn't supported.
-In that case run the script located at `../../bin/docker-port.sh` — this path is relative to the **skill file's directory** (`skills/lint/`), not the harness's CWD which could be anywhere.
+Twillm port: !`scripts/docker-port.sh`
 
 Use the output as the host for all `xh` API calls (replace the port or URL in URLs below). If it's a port number, use `http://localhost:<PORT>`. If it's already a URL, use it directly:
 ```bash
