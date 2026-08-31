@@ -76,6 +76,18 @@ The Transformer is an architecture...
 - `created` / `modified` (required): ISO-8601 timestamps — both millisecond UTC (`2026-06-04T10:21:47.840Z`) and timezone offsets (`2026-06-04T12:00:00+10:00`) are fine. Update `modified` on every edit.
 - `aliases` (optional): Alternate names that should resolve to this tiddler, e.g. `[Rotary Positional Encoding]`.
 
+### Block-Level Markdown Syntax
+* A stray `~` before `[[...]]` style links will cause a parsing error within the same block.
+  A block can be a single line or a multi-line (e.g. a bullet point) — the parser sees the whole block as one unit.
+  For example the markdown: `It cost ~$5 to buy [[cookies]]`, will cause parsing errors.
+* This can be avoided by escaping the tilde like this `\~`, e.g. `It cost \~$5 to buy [[cookies]]` parses no errors.
+* Multi-line bullet points count as one block:
+  ```markdown
+  * ~$10 for a
+    [[Cookie]]
+  ```
+  This also triggers the error.
+
 ### Title-to-Filename Mapping
 
 The canonical-filenames plugin (exposing `GET /bdawg/canonical`) handles title-to-filename mapping automatically. Before creating any tiddler, call this endpoint to get the correct `canonical` filename — never guess from the title yourself. The `title:` frontmatter value always uses the original, human-readable title; the filename uses the plugin's sanitised mapping.
