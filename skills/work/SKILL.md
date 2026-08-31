@@ -131,8 +131,19 @@ The service is always named `twillm`. The output below is either a host port num
 
 Twillm port: !`scripts/docker-port.sh`
 If you see a literal `scriptsdocker-port.sh` on the preceding line, dynamic context injection isn't supported.
-In that case, note that the script is relative to the skill's directory, not to the current working directory.
-Where is the skill's directory? What is `scripts/` relative to that (`<SKILL_DIR>/scripts/`)? That's where `docker-port.sh` is. Run `scripts/docker-port.sh`.
+In that case, follow these instructions carefully, do not deviate on your own.
+IMPORTANT: the script's location is relative to the skill's directory, NOT to the current working directory (CWD).
+For example if you are in `/foo/bar/` (CWD), and the skill is probably `/some/where/else/SKILL.md` (a hypothetical `$SKILL_DIR`) - a completely different directory tree.
+Do NOT try to run the script from CWD!
+Do NOT look for the script inside the CWD tree.
+Where is the skill's directory? What is `scripts/` relative to that (`$SKILL_DIR/scripts/`)? Run `scripts/docker-port.sh` (`$SKILL_DIR/scripts/docker-port.sh`)
+RUN the script! Do NOT read it without first RUNNING it!
+If you get the script wasn't found error, try harder to workout where the skill's directory is and thus where the script is. Remember your current working directory could be anywhere and is unreleated to where the script is.
+Before you move on to trying your own thing make sure you can answer these question:
+
+  1. What is the absolute directory path of the skill?
+  2. What is the absolute directory path `$SKILL_DIR/scripts/docker-port.sh`?
+  3. Did you run `$SKILL_DIR/scripts/docker-port.sh` (run it, NOT read it)?
 
 Use the output as the host for all `xh` API calls (replace the port or URL in URLs below). If it's a port number, use `http://localhost:<PORT>`. If it's already a URL, use it directly:
 ```bash
