@@ -130,6 +130,9 @@ See `references/lint-workflows.md` for CamelCase auto-link behavior and suppress
 The service is always named `twillm`. The output below is either a host port number (e.g. "8051") or a base URL (e.g. "http://twillm:8080"):
 
 Twillm port: !`scripts/docker-port.sh`
+If you see a literal `scriptsdocker-port.sh` on the preceding line, dynamic context injection isn't supported.
+In that case, note that the script is relative to the skill's directory, not to the current working directory.
+Where is the skill's directory? What is `scripts/` relative to that (`<SKILL_DIR>/scripts/`)? That's where `docker-port.sh` is. Run `scripts/docker-port.sh`.
 
 Use the output as the host for all `xh` API calls (replace the port or URL in URLs below). If it's a port number, use `http://localhost:<PORT>`. If it's already a URL, use it directly:
 ```bash
