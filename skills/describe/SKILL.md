@@ -46,6 +46,8 @@ Multiple invocations with different types are fine. For combining scopes, invoke
 
 **TiddlyWiki filter note:** Do not append `all[tiddlers]` to filters — the implicit starting state is `[all[tiddlers]]`, and appending it resets the list. Use `[tag[Paper]tag[Concept]]` for logical AND (tiddlers tagged with both).
 
+You can also use `[tags[]]` (list all unique tags) or `[tag[foo]count[]]` (count tiddlers with a specific tag) for exploratory queries. See `references/lint-workflows.md#Tag-queries` for the full reference.
+
 ## Resolving Targets
 
 Given input, resolve a file list before dispatching:

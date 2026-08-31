@@ -183,6 +183,29 @@ When the user asks a question about the wiki:
 3. **Synthesize an answer** citing specific tiddlers (use `[[Tiddler Name]]` links so the user can click through).
 4. **File useful discoveries.** If the query reveals a new insight, comparison, or connection worth keeping, create a new tiddler for it.
 
+### Query Tags
+
+Use the `/bdawg/filter-titles` endpoint with TiddlyWiki filter syntax to query tiddlers by tag:
+
+```bash
+# List all unique tags, sorted alphabetically
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tags[]sort[]]'
+# → ["Architecture","Concept","Entity","Paper",...]
+
+# Without sort[] — unsorted list of all unique tags
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tags[]]'
+
+# Count tiddlers with a specific tag
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tag[Concept]count[]]'
+# → ["42"]
+
+# List all tiddlers with a specific tag
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tag[Paper]]'
+
+# List tags with their counts (useful for spotting orphan tags)
+xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tags[]sort[]] :map[all[tiddlers]tag<currentTiddler>count[]addprefix[:]addprefix<currentTiddler>]'
+```
+
 ### Create Index
 
 To create a computed view that lists all tiddlers matching a tag, use the **Index Template** pattern. This creates a lightweight `.tid` file that renders dynamically — no manual maintenance needed.
