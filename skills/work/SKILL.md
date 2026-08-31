@@ -260,6 +260,30 @@ title: Index
 {{||Index Template|Paper}}
 ```
 
+
+### Index Filter Template
+
+When you need a computed view that filters by an arbitrary TiddlyWiki filter expression (not just a single tag), use the **Index Filter Template**. It works exactly like Index Template but accepts a full filter as the parameter instead of a single tag. Like Index Template, it excludes `<currentTiddler>` so the index tiddler won't list itself.
+
+```
+created: 20260813000000000
+modified: 20260813000000000
+tags: Index
+title: Compose Index
+
+! Sub-Indexes
+{{||Index Filter Template|[tag[Compose]tag[Index]]}}
+
+! Other Compose Tiddlers
+{{||Index Filter Template|[tag[Compose]!tag[Index]!tag[Instruction]]}}
+```
+
+The syntax is `{{||Index Filter Template|<FILTER>}}` — transclusion through the template with a full TiddlyWiki filter as the parameter. The template renders the same `<title> --- <description>` bullet list as Index Template.
+
+Use this for complex queries: intersection (`[tag[A]tag[B]]`), exclusion (`[tag[A]!tag[B]]`), or any filter expression.
+
+**Where to put it:** Same rules as Index Template — vault-side computed views go in `vault/` as `.tid` files.
+
 This creates a tiddler titled `Index` tagged `Index` that has 3 headings (`Topics`, `Concepts`, `Papers`) that each contain bulletpoint `<title> --- <description>` entries based on the corresponding tag.
 
 
