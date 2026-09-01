@@ -298,6 +298,23 @@ Use this for complex queries: intersection (`[tag[A]tag[B]]`), exclusion (`[tag[
 
 This creates a tiddler titled `Index` tagged `Index` that has 3 headings (`Topics`, `Concepts`, `Papers`) that each contain bulletpoint `<title> --- <description>` entries based on the corresponding tag.
 
+## Markdown Writing Conventions
+
+- **One sentence per line.** Write each sentence on its own line, even when sentences belong to the same paragraph. This avoids MD013 (line-length) warnings and matches your preferred style.
+
+  Good:
+  ```markdown
+  This is a sentence.
+  This is another sentence, same paragraph.
+  ```
+
+  Bad:
+  ```markdown
+  This is a sentence. And this is another sentence on the same line. And yet another one making the file have really long lines. Because, there's more and more sentences all on the one line with now carriage returns. This will trigger MD013 errors of lines exceeding 80 characters.
+  ```
+
+- **Lint with `rumdl`.** After creating or editing any `.md` file, run `rumdl` on it. MD013 (line-length) warnings are acceptable when the line cannot naturally be broken with a newline after a period. If a line can easily be split by inserting a newline after a `.`, do so — it avoids the warning and matches the one-sentence-per-line convention.
+
 
 ## Tips
 
