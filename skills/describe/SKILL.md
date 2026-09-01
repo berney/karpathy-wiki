@@ -63,10 +63,12 @@ After resolution, produce a deduplicated list of relative paths (starting with `
 
 1. **Resolve targets** to a deduplicated list of relative paths (starting with `vault/`). See **Resolving Targets** above.
 2. **Build the workflow.** Pipe null-delimited paths into `${CLAUDE_SKILL_DIR}/scripts/build-workflow.js`:
+
    ```bash
    find vault -name '*.md' -type f -print0 \
      | CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT}" node ${CLAUDE_SKILL_DIR}/scripts/build-workflow.js [--concurrency N]
    ```
+
    For TiddlyWiki filters, write the resolved filepath list to a temp file null-delimited and use `cat tmpfile | node ...`.
 3. **Return a summary.** Report what was emitted: `"Emitted workflow for 47 files with concurrency=2."`
 
@@ -75,6 +77,7 @@ The script reads the template from `${CLAUDE_PLUGIN_ROOT}/templates/describe-tem
 ## Description Quality Guidelines
 
 A good description:
+
 - Is one line (max ~256 characters)
 - Provides context that the title alone does not
 - Does NOT repeat or paraphrase the title
@@ -101,7 +104,7 @@ Add a `--refresh` flag parameter (default: disabled):
 
 The workflow handles reporting internally. After all files are processed, the workflow returns a summary to the main agent which relays it to the user:
 
-```
+```text
 Processed 142 tiddlers — added 87 descriptions, updated 12 redundant ones, skipped 43 with good descriptions.
 ```
 
@@ -112,19 +115,19 @@ If any errors occurred (file read failures, edit conflicts), list them separatel
 - **Describe during ingest instead.** If you are creating or editing a tiddler right now via `work`, just write the description inline — the main agent already has the file content and doesn't need a workflow. Use this skill for bulk operations on files not currently in context.
 - **Default concurrency of 2 is optimal for single-GPU setups.** Each background task shares the GPU; too many concurrent tasks slow down each one due to queue contention. Start at 2 and adjust based on observed performance.
 
-
 ## Cleanup
 
-* After Workflow-Based Dispatch and Reporting steps, offer to the user to remove the `~/.claude/workflows/describe-{timestamp}.js` file you just created.
+- After Workflow-Based Dispatch and Reporting steps, offer to the user to remove the `~/.claude/workflows/describe-{timestamp}.js` file you just created.
 
 Note: the `/describe-workflow` slash command will still show up afer deleting the file, until the user runs `/reload-skills`.
 
 ### Background
+
 This skill programmatically generates Claude code Dynamic Workflows.
 These are in the `~/.claude/workflows/` directory (files named like `describe-<timestamp>.js`) and show up as slash commands (ex: `/describe-workflow`) and as skills (despite not being skills) in:
 
-* Listed in `/skills` command.
-* Listed in the *skills* tab of `/plugin` (aliases `/plugins`, `/marketplace`) command.
+- Listed in `/skills` command.
+- Listed in the *skills* tab of `/plugin` (aliases `/plugins`, `/marketplace`) command.
 
 Showing up in the above as "skills" can be confusing for the user.
 Especially if time passes and the plugin (this skill) has been uninstalled, the workflow files, if they still exist, will still show up.

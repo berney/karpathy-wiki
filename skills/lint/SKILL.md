@@ -37,7 +37,7 @@ Use this whenever the user says "lint my wiki", "check for broken links", "find 
 
 ## Project Structure
 
-```
+```text
 ${CLAUDE_PROJECT_DIR}/
   vault/                 ← Hand-written tiddlers — where lint scans live
     *.md                 ← Markdown tiddlers
@@ -46,6 +46,7 @@ ${CLAUDE_PROJECT_DIR}/
 ```
 
 **Critical paths:**
+
 - `CLAUDE.md` at the **project root**, outside any vault directory.
 - Vault tiddlers are in `vault/` by default — alternative names need an explicit compose mount change.
 - `twillm-wiki/` is where twillm persists generated and derived content from ingestion.
@@ -69,6 +70,7 @@ The Transformer is an architecture...
 ```
 
 **Frontmatter fields:**
+
 - `title` (required): The tiddler's logical title — the original, unmapped name. Use Title Case with spaces. **Only one `title:` line should exist.** YAML uses the last value, so duplicate `title:` lines silently overwrite earlier ones and can cause mismatched title-to-filename mappings.
 - `description` (optional): A one-line description of the tiddler's content — additional context that supplements the title with new information, not redundant phrasing. Used by computed index views to surface tiddler meaning at a glance.
 - `tags` (required): YAML array of classification tags. See Tagging Taxonomy below.
@@ -102,13 +104,14 @@ Use double-bracket syntax for all inter-tiddler links:
 | `Index` | Computed views — dynamic index tiddlers that list other tiddlers by tag |
 
 **Rules:**
+
 - Every tiddler must have tags. Minimum one tag.
 - `Topic` is the broadest level — use it sparingly, usually one per subject area.
 - `Source` tiddlers are created automatically during ingestion.
 
 ## Docker Port
 
-The service is always named `twillm`. The output below is either a host port number (e.g. "8051") or a base URL (e.g. "http://twillm:8080"):
+The service is always named `twillm`. The output below is either a host port number (e.g. `8051`) or a base URL (e.g. `http://twillm:8080`):
 
 Twillm port: !`scripts/docker-port.sh`
 If you see a literal `scriptsdocker-port.sh` on the preceding line, dynamic context injection isn't supported.
@@ -122,14 +125,16 @@ RUN the script! Do NOT read it without first RUNNING it!
 If you get the script wasn't found error, try harder to workout where the skill's directory is and thus where the script is. Remember your current working directory could be anywhere and is unreleated to where the script is.
 Before you move on to trying your own thing make sure you can answer these question:
 
-  1. What is the absolute directory path of the skill?
-  2. What is the absolute directory path `$SKILL_DIR/scripts/docker-port.sh`?
-  3. Did you run `$SKILL_DIR/scripts/docker-port.sh` (run it, NOT read it)?
+1. What is the absolute directory path of the skill?
+2. What is the absolute directory path `$SKILL_DIR/scripts/docker-port.sh`?
+3. Did you run `$SKILL_DIR/scripts/docker-port.sh` (run it, NOT read it)?
 
 Use the output as the host for all `xh` API calls (replace the port or URL in URLs below). If it's a port number, use `http://localhost:<PORT>`. If it's already a URL, use it directly:
+
 ```bash
 xh get http://localhost:TWILLM_PORT/bdawg/filter-titles filter=='[all[missing]!is[shadow]]'
 ```
+
 If the output is `UNKNOWN`, neither docker/podman nor a container runtime is available and the container is not reachable — ensure `docker compose up -d` or equivalent is running.
 
 ## Lint Checks
@@ -166,6 +171,7 @@ xh get http://localhost:$PORT/bdawg/canonical | jq 'map({title, tags})'
 ```
 
 Check for inconsistent tags:
+
 - Plural vs singular (e.g., `concepts` vs `Concept`)
 - Tags that should be `Topic` vs `Concept` (check tag taxonomy)
 - Inconsistent casing (e.g., `Concept` vs `concept`)
@@ -192,17 +198,18 @@ For interactive views, create TiddlyWiki wikitext tiddlers with `.tid` extension
 - **Tag hygiene is low effort, high reward.** A quick pass catches typos and inconsistencies that compound over time.
 - **Use `xh` not `curl`.** Always use `xh` for HTTP requests when making API calls. If `xh` is not installed, ask the user rather than falling back to `curl` — `xh`'s syntax differs and a direct replacement can introduce subtle bugs (e.g., header quoting, JSON encoding).
 
-
 ## SKILL.md Debugging
+
 If the user is asking to debug the skill, here's some details to help.
 
 ### Variables
-* The skill arguments `ARGUMENTS` is: "${ARGUMENTS}".
-* The first argument is `ARGUMENTS[0]` is: "${ARGUMENTS[0]}".
-  * This is also arg 0: "$0" (alternative syntax: "${0}").
-* The claude session id `CLAUDE_SESSION_ID` is: "${CLAUDE_SESSION_ID}".
-* The current effort level `CLAUDE_EFFORT` is: "${CLAUDE_EFFORT}".
-* The skill directory `CLAUDE_SKILL_DIR` is: "${CLAUDE_SKILL_DIR}".
-* The project directory `CLAUDE_PROJECT_DIR` is: "${CLAUDE_PROJECT_DIR}".
-* The plugin root `CLAUDE_PLUGIN_ROOT` is: "${CLAUDE_PLUGIN_ROOT}".
-* The plugin persistent data directory `CLAUDE_PLUGIN_DATA` is: "${CLAUDE_PLUGIN_DATA}".
+
+- The skill arguments `ARGUMENTS` is: "${ARGUMENTS}".
+- The first argument is `ARGUMENTS[0]` is: "${ARGUMENTS[0]}".
+  - This is also arg 0: "$0" (alternative syntax: "${0}").
+- The claude session id `CLAUDE_SESSION_ID` is: "${CLAUDE_SESSION_ID}".
+- The current effort level `CLAUDE_EFFORT` is: "${CLAUDE_EFFORT}".
+- The skill directory `CLAUDE_SKILL_DIR` is: "${CLAUDE_SKILL_DIR}".
+- The project directory `CLAUDE_PROJECT_DIR` is: "${CLAUDE_PROJECT_DIR}".
+- The plugin root `CLAUDE_PLUGIN_ROOT` is: "${CLAUDE_PLUGIN_ROOT}".
+- The plugin persistent data directory `CLAUDE_PLUGIN_DATA` is: "${CLAUDE_PLUGIN_DATA}".

@@ -17,6 +17,7 @@ xh get http://localhost:$PORT/recipes/default/tiddlers/$:/config/WikiParserRules
 ```
 
 This determines what counts as a link:
+
 - **If `disable`:** Bare `FooBar` is plain text — it is never a link and will not appear in `[all[missing]]`.
 - **If `enable`:** Bare `FooBar` (CamelCase) is auto-converted to a wikilink. It must exist as a tiddler or appear as broken. Treat it the same as `[[FooBar]]`.
 
@@ -47,6 +48,7 @@ xh get http://localhost:$PORT/bdawg/filter-titles filter=='[[Source Tiddler Titl
 ```
 
 **Filter chain breakdown:**
+
 1. `[all[missing]]` — get all missing titles
 2. `!is[shadow]` — remove ones that have a matching shadow (title mismatch, not truly broken)
 3. `!is[system]` — remove system tiddlers

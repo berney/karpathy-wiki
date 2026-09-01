@@ -38,7 +38,7 @@ Use this whenever the user says "set up a wiki", "initialize twillm", "create a 
 
 ## Project Structure
 
-```
+```text
 ${CLAUDE_PROJECT_DIR}/
   CLAUDE.md              ← Agent instructions for this vault (not served as a wiki page)
   vault/                 ← The twillm vault — flat directory of tiddler files
@@ -53,6 +53,7 @@ ${CLAUDE_PROJECT_DIR}/
 ```
 
 **Critical paths:**
+
 - `CLAUDE.md` at the **project root**, outside any vault directory. twillm renders every `.md` inside the vault as a wiki page.
 - Vault tiddlers are in `vault/` by default — alternative names need an explicit compose mount change.
 - `twillm-wiki/` is where twillm persists generated and derived content from ingestion. Both `vault/` and `twillm-wiki/` need persistence (bind-mounted in Docker).
@@ -76,6 +77,7 @@ The Transformer is an architecture...
 ```
 
 **Frontmatter fields:**
+
 - `title` (required): The tiddler's logical title — the original, unmapped name. Use Title Case with spaces. **Only one `title:` line should exist.** YAML uses the last value, so duplicate `title:` lines silently overwrite earlier ones and can cause mismatched title-to-filename mappings. The file itself must be named using the canonical mapping (see the work skill for details).
 - `description` (optional): A one-line description of the tiddler's content — additional context that supplements the title with new information, not redundant phrasing. Used by computed index views to surface tiddler meaning at a glance.
 - `tags` (required): YAML array of classification tags. See Tagging Taxonomy below.
@@ -96,6 +98,7 @@ The Transformer is an architecture...
 | `Index` | Computed views — dynamic index tiddlers that list other tiddlers by tag |
 
 **Rules:**
+
 - Every tiddler must have tags. Minimum one tag.
 - `Topic` is the broadest level — use it sparingly, usually one per subject area.
 
@@ -129,7 +132,7 @@ If this fails (no output), start it: `docker compose up -d`. Then retry to get t
 
 4. **Create `.gitignore`:** Two things inside `twillm-wiki/` are transient:
 
-   ```
+   ```text
    # twillm transient content (recreated automatically)
    twillm-wiki/output/
    # runtime story state — not meaningful to commit
@@ -137,9 +140,7 @@ If this fails (no output), start it: `docker compose up -d`. Then retry to get t
    ```
 
 5. **Create `docker-compose.yml`:** Use the template from this skill's `scripts/docker-compose.example.yml`. The service is always named `twillm` and listens on port 8080 internally. Bind-mount all three directories.
-
 6. **Create CLAUDE.md** at the project root with a tag taxonomy customized to the user's domain. Follow the format in [Tiddler Conventions](#tiddler-conventions) above.
-
 7. **Start the service** (see below) and confirm it's accessible.
 
 ### Check or Upgrade Existing Setup

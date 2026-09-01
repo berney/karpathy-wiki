@@ -108,6 +108,7 @@ The skill has two concerns: **does this title collide** (another tiddler already
 4. Otherwise (`exists: false, isShadow: false`) → safe to create. Use `canonical` as the filename for the new file.
 
 **Practical tips:**
+
 - The `canonical` field is always present and gives you the exact filename to use — no need to manually map titles to filenames yourself.
 - When checking multiple related titles, make one call per title; the endpoint is fast.
 - If the user explicitly says to create/override a shadow, proceed and note it.

@@ -14,7 +14,7 @@ For Docker setups, mount the chosen directory to `/app/vault` in the container �
 
 Two things inside `twillm-wiki/` are transient and must be gitignored — check if a `.gitignore` exists at the project root and add these lines if missing:
 
-```
+```text
 # twillm transient content (recreated automatically)
 twillm-wiki/output/
 # runtime story state — not meaningful to commit
@@ -120,7 +120,7 @@ services:
 
 **Editing tiddlywiki.info:** Always Read the file first, then detect its existing indentation style (tabs or spaces) from the read output and match it when adding new entries. The skill's default fixture uses tabs, but users may have edited it with spaces — always follow whatever convention is already in their file. For example, to add `"tiddlywiki/katex"`:
 
-```
+```text
 # If the existing lines use tabs (look for ^I or actual tab characters):
 -	"tiddlywiki/dynannotate",
 +	"tiddlywiki/dynannotate",
@@ -135,6 +135,7 @@ services:
 After editing, validate with `jq . < twillm-wiki/tiddlywiki.info`. If jq fails, report the error to the user — TiddlyWiki may tolerate non-standard JSON (comments, trailing commas, etc.) that jq rejects, so don't assume it's broken. Ask the user if they want you to fix the formatting or leave it as-is.
 
 **Popular TiddlyWiki plugins** (add to `"plugins"` array):
+
 | Plugin | Use for |
 |---|---|
 | `tiddlywiki/highlight` | Syntax highlighting for code blocks via highlight.js |
@@ -177,6 +178,7 @@ When the user asks to "check" or "upgrade" their docker-compose (e.g., "check my
    ```
 
    If `rsync` is not available, fall back to `cp -a --update=none-fail source dest` which refuses to overwrite existing files — the copy will fail with an error if the destination already exists, rather than silently clobbering it.
+
 5. **Check each item independently** by looking for specific volume mount patterns in the user's file:
    - **Vault mount present** — grep for a line matching `./vault:/app/vault:Z` or a non-standard path (e.g. `./docs/wiki:/app/vault:Z`)
    - **twillm-wiki mount present** — grep for `./twillm-wiki:/app/twillm-wiki:Z`. If missing, this is critical: generated content from ingest is lost on container restart.

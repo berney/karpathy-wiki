@@ -37,7 +37,7 @@ Use this whenever the user says "ingest this paper", "ingest these docs", "what 
 
 ## Project Structure
 
-```
+```text
 ${CLAUDE_PROJECT_DIR}/
   CLAUDE.md              ← Agent instructions for this vault
   vault/                 ← Hand-written tiddlers — what you create and edit
@@ -46,6 +46,7 @@ ${CLAUDE_PROJECT_DIR}/
 ```
 
 **Critical paths:**
+
 - `CLAUDE.md` at the **project root**, outside any vault directory. twillm renders every `.md` inside the vault as a wiki page.
 - Vault tiddlers are in `vault/` by default — alternative names need an explicit compose mount change.
 - `twillm-wiki/` is where twillm persists generated and derived content from ingestion.
@@ -69,6 +70,7 @@ The Transformer is an architecture...
 ```
 
 **Frontmatter fields:**
+
 - `title` (required): The tiddler's logical title — the original, unmapped name. Use Title Case with spaces. **Only one `title:` line should exist.** YAML uses the last value, so duplicate `title:` lines silently overwrite earlier ones and can cause mismatched title-to-filename mappings. The file itself must be named using the canonical mapping below.
 - `description` (optional): A one-line description of the tiddler's content — additional context that supplements the title with new information, not redundant phrasing. Used by computed index views to surface tiddler meaning at a glance.
 - `tags` (required): YAML array of classification tags. See Tagging Taxonomy below.
@@ -77,15 +79,18 @@ The Transformer is an architecture...
 - `aliases` (optional): Alternate names that should resolve to this tiddler, e.g. `[Rotary Positional Encoding]`.
 
 ### Block-Level Markdown Syntax
-* A stray `~` before `[[...]]` style links will cause a parsing error within the same block.
+
+- A stray `~` before `[[...]]` style links will cause a parsing error within the same block.
   A block can be a single line or a multi-line (e.g. a bullet point) — the parser sees the whole block as one unit.
   For example the markdown: `It cost ~$5 to buy [[cookies]]`, will cause parsing errors.
-* This can be avoided by escaping the tilde like this `\~`, e.g. `It cost \~$5 to buy [[cookies]]` parses no errors.
-* Multi-line bullet points count as one block:
+- This can be avoided by escaping the tilde like this `\~`, e.g. `It cost \~$5 to buy [[cookies]]` parses no errors.
+- Multi-line bullet points count as one block:
+
   ```markdown
   * ~$10 for a
     [[Cookie]]
   ```
+
   This also triggers the error.
 
 ### Title-to-Filename Mapping
@@ -120,6 +125,7 @@ See `references/lint-workflows.md` for CamelCase auto-link behavior and suppress
 | `Index` | Computed views — dynamic index tiddlers that list other tiddlers by tag |
 
 **Rules:**
+
 - Every tiddler must have tags. Minimum one tag.
 - `Topic` is the broadest level — use it sparingly, usually one per subject area.
 - `Source` tiddlers are created automatically during ingestion (one per source document).
@@ -127,7 +133,7 @@ See `references/lint-workflows.md` for CamelCase auto-link behavior and suppress
 
 ## Docker Port
 
-The service is always named `twillm`. The output below is either a host port number (e.g. "8051") or a base URL (e.g. "http://twillm:8080"):
+The service is always named `twillm`. The output below is either a host port number (e.g. `8051`) or a base URL (e.g. `http://twillm:8080`):
 
 Twillm port: !`scripts/docker-port.sh`
 If you see a literal `scriptsdocker-port.sh` on the preceding line, dynamic context injection isn't supported.
@@ -141,14 +147,16 @@ RUN the script! Do NOT read it without first RUNNING it!
 If you get the script wasn't found error, try harder to workout where the skill's directory is and thus where the script is. Remember your current working directory could be anywhere and is unreleated to where the script is.
 Before you move on to trying your own thing make sure you can answer these question:
 
-  1. What is the absolute directory path of the skill?
-  2. What is the absolute directory path `$SKILL_DIR/scripts/docker-port.sh`?
-  3. Did you run `$SKILL_DIR/scripts/docker-port.sh` (run it, NOT read it)?
+1. What is the absolute directory path of the skill?
+2. What is the absolute directory path `$SKILL_DIR/scripts/docker-port.sh`?
+3. Did you run `$SKILL_DIR/scripts/docker-port.sh` (run it, NOT read it)?
 
 Use the output as the host for all `xh` API calls (replace the port or URL in URLs below). If it's a port number, use `http://localhost:<PORT>`. If it's already a URL, use it directly:
+
 ```bash
 xh get http://localhost:TWILLM_PORT/bdawg/canonical title==MyTitle
 ```
+
 If the output is `UNKNOWN`, neither docker/podman nor a container runtime is available and the container is not reachable — ensure `docker compose up -d` or equivalent is running.
 
 ## Operations
@@ -225,7 +233,7 @@ To create a computed view that lists all tiddlers matching a tag, use the **Inde
 1. **Decide the tag and name.** E.g., tag `MCP`, index title "MCP Index".
 2. **Create a `.tid` file** in `vault/` (or wherever your vault tiddlers live):
 
-   ```
+   ```text
    created: 20260813000000000
    modified: 20260813000000000
    tags: MCP Index
@@ -236,16 +244,16 @@ To create a computed view that lists all tiddlers matching a tag, use the **Inde
 
    The syntax is `{{|Index Template|<TAG>}}` — this is transclusion the current tiddler through the `Index Template` template tiddler and passing the `<TAG>` as a parameter. This is substituted using `$(tag)$` in the template's filter, so `[tag[$(tag)$]]` resolves to `[tag[MCP]]`.
    The template tiddler filters `<currentTiddler>` from the result - so this excludes the tiddler `MCP Index` even though it is tagged `MCP`.
-
 3. **The rendered output** is a bullet list: each matching tiddler appears as `<title> --- <description>`, using the `description` frontmatter field from each tiddler.
 
 **Where to put it:**
+
 - Vault-side computed views go in `vault/` as `.tid` files (side by side with `.md` tiddlers).
 - System-level dashboards go in `twillm-wiki/tiddlers/`.
 
 **Example:** To create an index of all `Paper`-tagged tiddlers:
 
-```
+```text
 created: 20260813000000000
 modified: 20260813000000000
 tags: Paper Index
@@ -256,7 +264,7 @@ title: Paper Index
 
 Because the transclusion passes a parameter, a single tiddler can use it multiple times. For example:
 
-```
+```text
 created: 20260813000000000
 modified: 20260813000000000
 tags: Index
@@ -272,12 +280,11 @@ title: Index
 {{||Index Template|Paper}}
 ```
 
-
 ### Index Filter Template
 
 When you need a computed view that filters by an arbitrary TiddlyWiki filter expression (not just a single tag), use the **Index Filter Template**. It works exactly like Index Template but accepts a full filter as the parameter instead of a single tag. Like Index Template, it excludes `<currentTiddler>` so the index tiddler won't list itself.
 
-```
+```text
 created: 20260813000000000
 modified: 20260813000000000
 tags: Index
@@ -303,18 +310,19 @@ This creates a tiddler titled `Index` tagged `Index` that has 3 headings (`Topic
 - **One sentence per line.** Write each sentence on its own line, even when sentences belong to the same paragraph. This avoids MD013 (line-length) warnings and matches your preferred style.
 
   Good:
+
   ```markdown
   This is a sentence.
   This is another sentence, same paragraph.
   ```
 
   Bad:
+
   ```markdown
   This is a sentence. And this is another sentence on the same line. And yet another one making the file have really long lines. Because, there's more and more sentences all on the one line with now carriage returns. This will trigger MD013 errors of lines exceeding 80 characters.
   ```
 
 - **Lint with `rumdl`.** After creating or editing any `.md` file, run `rumdl` on it. MD013 (line-length) warnings are acceptable when the line cannot naturally be broken with a newline after a period. If a line can easily be split by inserting a newline after a `.`, do so — it avoids the warning and matches the one-sentence-per-line convention.
-
 
 ## Tips
 
