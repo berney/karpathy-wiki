@@ -26,7 +26,7 @@ From there, use `/work` to ingest sources and build your knowledge base, `/lint`
 
 ## Mono-repo Structure
 
-```
+```text
 .claude-plugin/        Plugin manifest for Claude Code
 .codex-plugin/         Plugin manifest for Codex CLI
 .cursor-plugin/        Plugin manifest for Cursor IDE
@@ -46,11 +46,13 @@ twillm/                Docker image build context for twillm
   template-wiki/       Empty template directory (prevents materialiseWiki clobbering)
 ```
 
-This is a mono-repo. The `skills/`, `hooks/`, and per-harness manifests are the distributable plugin. The `twillm/` directory builds the Docker image referenced by the setup skill's `docker-compose.yml` template — it bundles TiddlyWiki plugins, shadow tiddlers, and system configuration so users need nothing beyond this plugin and Docker.
+This is a mono-repo.
+The `skills/`, `hooks/`, and per-harness manifests are the distributable plugin.
+The `twillm/` directory builds the Docker image referenced by the setup skill's `docker-compose.yml` template — it bundles TiddlyWiki plugins, shadow tiddlers, and system configuration so users need nothing beyond this plugin and Docker.
 
 ## How It Works
 
-```
+```text
 User installs plugin  →  Gets skills + setup skill
                         ↓
 User runs /setup      →  Skill generates docker-compose.yml, vault/, twillm-wiki/
