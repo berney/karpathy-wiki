@@ -1,14 +1,20 @@
 # Lint Workflows
 
-Comprehensive procedures for wiki health-checking. See the main SKILL.md for the high-level lint overview and intent detection. See `shadow-tiddlers.md` for shadow-aware filtering in all workflows below.
+Comprehensive procedures for wiki health-checking.
+See the main SKILL.md for the high-level lint overview and intent detection.
+See `shadow-tiddlers.md` for shadow-aware filtering in all workflows below.
 
 ## Missing Links Linting
 
-**Missing links** are tiddler titles referenced by hard wikilinks (`[[Title]]`) but don't exist in the store (not even as shadows). The workflow for finding and fixing them:
+**Missing links** are tiddler titles referenced by hard wikilinks (`[[Title]]`) but don't exist in the store (not even as shadows).
+The workflow for finding and fixing them:
 
 ### Step 1: Check Auto-Link Config
 
-TiddlyWiki's `$:/config/WikiParserRules/Inline/wikilink` controls whether bare CamelCase words become links. Its value is either `enable` or `disable`. Default since TW5 v5.3.0 is `disable`, but a plugin shadow can override it to `enable`. Check first:
+TiddlyWiki's `$:/config/WikiParserRules/Inline/wikilink` controls whether bare CamelCase words become links.
+Its value is either `enable` or `disable`.
+Default since TW5 v5.3.0 is `disable`, but a plugin shadow can override it to `enable`.
+Check first:
 
 ```bash
 # Is CamelCase auto-linking enabled?
@@ -19,22 +25,32 @@ xh get http://localhost:$PORT/recipes/default/tiddlers/$:/config/WikiParserRules
 This determines what counts as a link:
 
 - **If `disable`:** Bare `FooBar` is plain text — it is never a link and will not appear in `[all[missing]]`.
-- **If `enable`:** Bare `FooBar` (CamelCase) is auto-converted to a wikilink. It must exist as a tiddler or appear as broken. Treat it the same as `[[FooBar]]`.
+- **If `enable`:** Bare `FooBar` (CamelCase) is auto-converted to a wikilink.
+  It must exist as a tiddler or appear as broken.
+  Treat it the same as `[[FooBar]]`.
 
 TiddlyWiki auto-converts CamelCase words into wikilinks inside prose, table headings and cells, (but never inside code blocks), when this setting is `enable`.
 
 **Two ways to suppress CamelCase auto-links (when enabled):**
 
-1. **Use spaces to break the pattern.** `System Tag` instead of `SystemTag`. Works anywhere CamelCase appears — prose, tables, headings. Not a table-specific quirk.
-2. **Prefix with `~`.** `~ThemeMechanism` renders as "ThemeMechanism" without a link. Only works when auto-linking is enabled; if it's disabled, `~` renders literally and looks ugly.
+1. **Use spaces to break the pattern.**
+   `System Tag` instead of `SystemTag`.
+   Works anywhere CamelCase appears — prose, tables, headings.
+   Not a table-specific quirk.
+2. **Prefix with `~`.**
+   `~ThemeMechanism` renders as "ThemeMechanism" without a link.
+   Only works when auto-linking is enabled; if it's disabled, `~` renders literally and looks ugly.
 
 When camel case linking is **disabled**, CamelCase words are already plain text by default — no suppression needed, and the `~` prefix should be avoided since it appears as a visible character in the rendered output.
 
-**System tiddlers:** TiddlyWiki system tiddlers like `$:/ControlPanel`, `$:/theme`, and `$:/language` are valid titles that TiddlyWiki auto-links (no brackets needed). Write them directly in prose — they become working links.
+**System tiddlers:** TiddlyWiki system tiddlers like `$:/ControlPanel`, `$:/theme`, and `$:/language` are valid titles that TiddlyWiki auto-links (no brackets needed).
+Write them directly in prose — they become working links.
 
 ### Step 2: Find Broken Links
 
-**Use the `/bdawg/filter-titles` endpoint** instead of `tiddlers.json`. The TiddlyWeb API restricts filter input to existing non-system ordinary tiddlers, so `[all[missing]]` and `[links[]]` miss references from system tiddlers and plugins. The custom route has no such restriction and catches all missing titles.
+**Use the `/bdawg/filter-titles` endpoint** instead of `tiddlers.json`.
+The TiddlyWeb API restricts filter input to existing non-system ordinary tiddlers, so `[all[missing]]` and `[links[]]` miss references from system tiddlers and plugins.
+The custom route has no such restriction and catches all missing titles.
 
 ```bash
 # Find ALL broken link source tiddlers (one pass)
@@ -56,9 +72,12 @@ xh get http://localhost:$PORT/bdawg/filter-titles filter=='[[Source Tiddler Titl
 
 ### Step 3: Fix Broken Links
 
-When a wikilink shows up as missing, don't immediately create a new tiddler. Three common cases:
+When a wikilink shows up as missing, don't immediately create a new tiddler.
+Three common cases:
 
-**A) Title mismatch (CamelCase/casing difference):** Only relevant if CamelCase auto-linking is `enable`. The tiddler exists but under a different title than the wikilink uses. Split CamelCase into spaced words and search shadows:
+**A) Title mismatch (CamelCase/casing difference):** Only relevant if CamelCase auto-linking is `enable`.
+The tiddler exists but under a different title than the wikilink uses.
+Split CamelCase into spaced words and search shadows:
 
 ```bash
 # "ThemeMechanism" is missing — Check all (ordinary) tiddlers:
@@ -73,7 +92,10 @@ xh get http://localhost:$PORT/bdawg/filter-titles filter=='[all[tiddlers+shadows
 
 If found, update the wikilink to match the actual title.
 
-**B) Hallucinated link:** The wikilink references a concept that doesn't actually exist in the wiki (no ordinary tiddler, no shadow match). If nothing matches even with CamelCase splitting, the wikilink is likely hallucinated — or perhaps the content hasn't been added yet. Generally, you should create the target tiddler before other tiddlers link to it. If the concept doesn't belong in the wiki at all, remove the reference from the source tiddler.
+**B) Hallucinated link:** The wikilink references a concept that doesn't actually exist in the wiki (no ordinary tiddler, no shadow match).
+If nothing matches even with CamelCase splitting, the wikilink is likely hallucinated — or perhaps the content hasn't been added yet.
+Generally, you should create the target tiddler before other tiddlers link to it.
+If the concept doesn't belong in the wiki at all, remove the reference from the source tiddler.
 
 ## Counting with `count[]` (no pipe to jq)
 
@@ -89,45 +111,11 @@ xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tag[Concept]count[]]
 xh get http://localhost:$PORT/bdawg/filter-titles filter=='[[Source Tiddler]links[]is[missing]count[]]'
 ```
 
-### Tag queries
-
-#### 1. List all unique tags (sorted)
-
-```bash
-xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tags[]sort[]]'
-```
-
-Returns a JSON array of every unique tag used across all tiddlers, sorted alphabetically. Use this to audit tag hygiene — look for near-duplicates (`Concept` vs `concepts`), tags used by only one tiddler, or tags that should be merged.
-
-Without `sort[]` (`[tags[]]`) the list is unsorted and harder to scan.
-
-#### 2. Count tiddlers with a specific tag
-
-```bash
-xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tag[foo]count[]]'
-```
-
-Returns the number of tiddlers tagged with `foo`. This uses the `[tag[<tag>]count[]]` form — `tag` takes a single argument (the tag name), while `tags` takes no arguments (it lists all unique tags).
-
-#### 3. List tiddlers with a specific tag
-
-```bash
-xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tag[Concept]]'
-```
-
-Returns the titles of all tiddlers tagged with `Concept`. To also get the count, run a second query with `[tag[Concept]count[]]` — `count[]` replaces the list rather than appending to it.
-
-#### 4. List tags with their counts
-
-```bash
-xh get http://localhost:$PORT/bdawg/filter-titles filter=='[tags[]sort[]] :map[all[tiddlers]tag<currentTiddler>count[]addprefix[:]addprefix<currentTiddler>]'
-```
-
-Returns the count of tiddlers for each unique tag in the form `["foo:3", "bar:4", "baz:1"]`. Useful for spotting tags used by only one tiddler (potential orphan tags). The `:map` iterates over each tag from `[tags[]sort[]]`, uses it as `<currentTiddler>` to count matching tiddlers, then prefixes the tag name with `:` separator.
-
 ## Fixing Non-Canonical Filenames
 
-A tiddler's filename may not match the canonical mapping for its title. For example, a tiddler titled "Foo: Widgets" might be stored as `foo-widgets.md`. The `POST /bdawg/canonical` endpoint renames the file on disk to the correct canonical name without changing the title.
+A tiddler's filename may not match the canonical mapping for its title.
+For example, a tiddler titled "Foo: Widgets" might be stored as `foo-widgets.md`.
+The `POST /bdawg/canonical` endpoint renames the file on disk to the correct canonical name without changing the title.
 
 ### Scanning all tiddlers
 
@@ -137,7 +125,9 @@ Before fixing individual files, scan every ordinary tiddler for non-canonical fi
 xh get http://localhost:$PORT/bdawg/canonical | jq 'map(select(.isLooselyCanonical | not) | {title, canonical})'
 ```
 
-This returns all non-system tiddlers and filters for those whose filename doesn't match the canonical mapping. The output shows each problematic title and the filename it should have. Use this list to decide between a targeted fix (`POST /bdawg/canonical` for one file) or a full cleanup pass (`POST /bdawg/canonical/rename-all`).
+This returns all non-system tiddlers and filters for those whose filename doesn't match the canonical mapping.
+The output shows each problematic title and the filename it should have.
+Use this list to decide between a targeted fix (`POST /bdawg/canonical` for one file) or a full cleanup pass (`POST /bdawg/canonical/rename-all`).
 
 **Fix a single file:**
 
@@ -159,11 +149,13 @@ xh post http://localhost:$PORT/bdawg/canonical/rename-all x-requested-with:Tiddl
 xh post http://localhost:$PORT/bdawg/canonical/rename-all x-requested-with:TiddlyWiki strict==true
 ```
 
-System tiddlers are skipped by both endpoints and never renamed. The default non-strict mode is recommended — it only fixes actual mismatches, not casing-only ones.
+System tiddlers are skipped by both endpoints and never renamed.
+The default non-strict mode is recommended — it only fixes actual mismatches, not casing-only ones.
 
 ## Retitling Tiddlers
 
-When a user says "rename Foo to Bar", "retitle Foo as Bar", "change the title of Foo to Bar", "move Foo to Bar", or "mv Foo Bar", they mean change the tiddler's title. In practice this means: rename the file on disk (e.g., `Foo.md` → `Bar.md`) and update the `title:` frontmatter field.
+When a user says "rename Foo to Bar", "retitle Foo as Bar", "change the title of Foo to Bar", "move Foo to Bar", or "mv Foo Bar", they mean change the tiddler's title.
+In practice this means: rename the file on disk (e.g., `Foo.md` → `Bar.md`) and update the `title:` frontmatter field.
 
 1. **Change the `title:` field in the frontmatter** to the new name (must exactly match the new filename).
 2. **Rename the file** on disk to match the new title.
@@ -182,11 +174,14 @@ xh get http://localhost:$PORT/bdawg/filter-titles filter=='[[{NewTitle}]count[]]
 # → 0 means safe, no conflict
 ```
 
-**When retitling a tiddler that overrides a (shadow) tiddler,** only change the title and filename. Do **not** add an `aliases:` field for the old name — just omit it. See `shadow-tiddlers.md` for shadow detection and resolution details.
+**When retitling a tiddler that overrides a (shadow) tiddler,** only change the title and filename.
+Do **not** add an `aliases:` field for the old name — just omit it.
+See `shadow-tiddlers.md` for shadow detection and resolution details.
 
 ## Computed Views (.tid)
 
-For interactive views, create TiddlyWiki wikitext tiddlers with `.tid` extension, placed side by side with `.md` files in the vault directory (e.g., `vault/Dashboard.tid`). They use the same location — twillm serves them both.
+For interactive views, create TiddlyWiki wikitext tiddlers with `.tid` extension, placed side by side with `.md` files in the vault directory (e.g., `vault/Dashboard.tid`).
+They use the same location — twillm serves them both.
 
 ```yaml
 title: Topic Index
@@ -197,4 +192,5 @@ tags: []
 <<list-links filter:"[tag[Topic]]">>
 ```
 
-Useful computed views include tag listings (`<<list-links filter:"[tag[X]]">>`), recent updates, or custom dashboards. These are optional but powerful for navigation.
+Useful computed views include tag listings (`<<list-links filter:"[tag[X]]">>`), recent updates, or custom dashboards.
+These are optional but powerful for navigation.
