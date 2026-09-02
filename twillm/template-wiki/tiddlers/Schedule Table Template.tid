@@ -1,0 +1,48 @@
+created: 20260813042429505
+modified: 20260813043310911
+tags: Template
+title: Schedule Table Template
+type: text/vnd.tiddlywiki
+
+\parameters (filter:"[tag[Presentation]sort[time]]")
+
+\whitespace trim
+
+<table>
+    <thead>
+        <th>Time</th>
+        <th>Title</th>
+        <th>Speaker</th>
+        <th>Company</th>
+        <th>Description</th>
+    </thead>
+
+    <$list filter=`$(filter)$` >
+        <$list-template>
+            <tr>
+                <td>{{!!time}}</td>
+                <td><$link/></td>
+                <td>
+                    <$list filter="[<currentTiddler>get[speaker]jsonget[]]" variable="speaker" >
+                        <$link to=<<speaker>>/><br>
+                        <$list-empty>
+                            <$link to={{!!speaker}}/>
+                        </$list-empty>
+                    </$list>
+                </td>
+                <td>
+                    <$list filter="[<currentTiddler>get[company]jsonget[]]" variable="company" >
+                        <$link to=<<company>>/><br>
+                        <$list-empty>
+                            <$link to={{!!company}}/>
+                        </$list-empty>
+                    </$list>
+                </td>
+                <td> {{!!description}} </td>
+            </tr>
+        </$list-template>
+
+        <$list-empty>None!</$list-empty>
+
+    </$list>
+</table>
